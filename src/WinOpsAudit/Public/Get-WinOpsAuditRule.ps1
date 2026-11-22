@@ -1,50 +1,8 @@
 function Get-WinOpsAuditRule {
-    <#
-    .SYNOPSIS
-    Lists the audit rules WinOpsAudit knows about.
-
-    .DESCRIPTION
-    Returns one object per audit rule: its id, the area it audits, what it looks for, how
-    serious a finding is, and whether it is available yet or still planned. The objects can be
-    filtered, sorted and exported like any other PowerShell output.
-
-    Nothing is audited and nothing is changed: this only reads the catalog that ships with the
-    module.
-
-    .PARAMETER Id
-    One or more rule ids. Wildcards are allowed, for example 'AD-*'.
-
-    .PARAMETER Area
-    Only the rules of these areas: Inventory, Certificates, FolderPermissions or
-    ActiveDirectory.
-
-    .EXAMPLE
-    Get-WinOpsAuditRule
-
-    Lists every rule.
-
-    .EXAMPLE
-    Get-WinOpsAuditRule -Area Certificates | Format-Table Id, Severity, Title
-
-    Shows the certificate rules as a table.
-
-    .EXAMPLE
-    Get-WinOpsAuditRule -Id 'AD-*' | Where-Object Severity -eq 'High'
-
-    Lists the Active Directory rules whose findings are serious.
-
-    .INPUTS
-    System.String
-
-    Rule ids, from the pipeline or from the Id property of the objects in it.
-
-    .OUTPUTS
-    WinOpsAudit.Rule
-
-    .LINK
-    https://github.com/zxxdev/winops-audit
-    #>
-    [CmdletBinding()]
+    # The help is written in docs/commands/WinOpsAudit/Get-WinOpsAuditRule.md and built into
+    # this file by ./build.ps1 -Task Help.
+    # .ExternalHelp WinOpsAudit-help.xml
+    [CmdletBinding(HelpUri = 'https://github.com/zxxdev/winops-audit/blob/main/docs/commands/WinOpsAudit/Get-WinOpsAuditRule.md')]
     [OutputType('WinOpsAudit.Rule')]
     param(
         [Parameter(Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]

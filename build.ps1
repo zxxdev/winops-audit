@@ -89,18 +89,42 @@ function Invoke-Help {
     # errors. Strict mode stays on everywhere else; this only affects this function's scope.
     Set-StrictMode -Off
     Import-Tool Microsoft.PowerShell.PlatyPS
-    $module = Import-Module $manifest -Force -PassThru
-    $folder = Join-Path $root 'docs/commands'
-    New-MarkdownCommandHelp -ModuleInfo $module -OutputFolder $folder -WithModulePage -Force | Out-Null
-    Write-Information "Command reference written to $folder." -InformationAction Continue
+    Import-Module $manifest -Force
+
+    # The Markdown pages are the source of the help: one per cmdlet (Verb-Noun.md).
+    $pages = @(Get-ChildItem -Path (Join-Path $root 'docs/commands/WinOpsAudit') -Filter '*-*.md')
+
+    # Bring them in line with the code (new or changed parameters, syntax).
+    foreach ($page in $pages) {
+        Update-MarkdownCommandHelp -Path $page.FullName -NoBackup | Out-Null
+    }
+
+    # A new parameter arrives as a placeholder for its description: it must be written.
+    $placeholders = $pages | Select-String -Pattern '{{' -SimpleMatch
+    if ($placeholders) {
+        $placeholders | ForEach-Object { Write-Information "$($_.Filename):$($_.LineNumber): $($_.Line.Trim())" -InformationAction Continue }
+        throw 'The help has placeholders to fill in (above).'
+    }
+
+    # Build the help file Get-Help reads (MAML) into the module.
+    $help = $pages | ForEach-Object { Import-MarkdownCommandHelp -Path $_.FullName }
+    $staging = Join-Path $out 'help'
+    Remove-Item -Path $staging -Recurse -Force -ErrorAction Ignore
+    Export-MamlCommandHelp -CommandHelp $help -OutputFolder $staging -Force | Out-Null
+    $maml = Get-ChildItem -Path $staging -Recurse -Filter '*.xml' | Select-Object -First 1
+    $target = Join-Path $root 'src/WinOpsAudit/en-US'
+    New-Item -ItemType Directory -Path $target -Force | Out-Null
+    Copy-Item -LiteralPath $maml.FullName -Destination (Join-Path $target 'WinOpsAudit-help.xml') -Force
+    Write-Information 'Help built into src/WinOpsAudit/en-US/WinOpsAudit-help.xml.' -InformationAction Continue
 }
 
 function Invoke-HelpCheck {
     Invoke-Help
-    git -C $root add --intent-to-add -- docs/commands
-    git -C $root diff --exit-code --stat -- docs/commands
+    $paths = 'docs/commands', 'src/WinOpsAudit/en-US'
+    git -C $root add --intent-to-add -- $paths
+    git -C $root diff --exit-code --stat -- $paths
     if ($LASTEXITCODE -ne 0) {
-        throw 'docs/commands is out of date: run ./build.ps1 -Task Help and commit the result.'
+        throw 'The help is out of date: run ./build.ps1 -Task Help and commit the result.'
     }
 }
 
