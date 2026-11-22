@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<helpItems xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" schema="maml" xmlns="http://msh">
+  <command:command>
+    <command:details>
+      <command:name>Get-WinOpsAuditRule</command:name>
+      <maml:description>
+        <maml:para>Lists the audit rules WinOpsAudit knows about.</maml:para>
+      </maml:description>
+      <command:verb>Get</command:verb>
+      <command:noun>WinOpsAuditRule</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Returns one object per audit rule: its id, the area it audits, what it looks for, how serious a finding is, and whether it is available yet or still planned. The objects can be filtered, sorted and exported like any other PowerShell output.
+
+Nothing is audited and nothing is changed: this only reads the catalog that ships with the module.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Get-WinOpsAuditRule</maml:name>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+          <maml:name>Id</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String[]</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>Area</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String[]</maml:name>
+          </dev:type>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Area</maml:name>
+        <maml:description>
+          <maml:para>Only the rules of these areas: Inventory, Certificates, FolderPermissions or ActiveDirectory.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String[]</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="true" pipelineInput="true (ByValue, ByPropertyName)" position="0" aliases="none">
+        <maml:name>Id</maml:name>
+        <maml:description>
+          <maml:para>One or more rule ids. Wildcards are allowed, for example `AD-*`. An exact id that matches no rule writes an error and the command goes on with the rest; a wildcard that matches nothing is not an error.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String[]</maml:name>
+        </dev:type>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>System.String[]</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>Rule ids, from the pipeline or from the Id property of the objects in it.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>WinOpsAudit.Rule</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>One object per rule, with the properties Id, Area, Title, Severity, Status and Session (the roadmap session that brings the rule).</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para>The catalog is in `Data/Rules.psd1` inside the module. A rule is Planned until its cmdlet, tests and help are written; then it is Available.</maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1: List every rule ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditRule
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 2: The certificate rules as a table ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditRule -Area Certificates | Format-Table Id, Severity, Title
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 3: The serious Active Directory rules ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditRule -Id 'AD-*' | Where-Object Severity -eq 'High'
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>Wildcards in `-Id` select several rules; `Where-Object` then keeps the ones with high severity.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version</maml:linkText>
+        <maml:uri>https://github.com/zxxdev/winops-audit/blob/main/docs/commands/WinOpsAudit/Get-WinOpsAuditRule.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Project on GitHub</maml:linkText>
+        <maml:uri>https://github.com/zxxdev/winops-audit</maml:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+</helpItems>
