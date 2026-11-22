@@ -69,8 +69,20 @@ Describe 'Get-WinOpsAuditRule' {
     }
 
     It 'filters by id with wildcards, and takes ids from the pipeline' {
-        (Get-WinOpsAuditRule -Id 'AD-*').Id | Should -Match '^AD-'
+        (Get-WinOpsAuditRule -Id 'AD-*').Id | Should -Be 'AD-001', 'AD-002', 'AD-003', 'AD-004'
+        (Get-WinOpsAuditRule -Id 'CRT-00?').Id | Should -Be 'CRT-001', 'CRT-002', 'CRT-003'
         ('CRT-001', 'ACL-002' | Get-WinOpsAuditRule).Id | Should -Be 'CRT-001', 'ACL-002'
+    }
+
+    It 'returns each rule once, even when the ids overlap or repeat' {
+        (Get-WinOpsAuditRule -Id 'AD-*', 'AD-001').Id | Should -Be 'AD-001', 'AD-002', 'AD-003', 'AD-004'
+        ('CRT-001', 'crt-001' | Get-WinOpsAuditRule).Id | Should -Be 'CRT-001'
+    }
+
+    It 'combines -Id and -Area, and an id left out by -Area is not an error' {
+        $rules = Get-WinOpsAuditRule -Id 'CRT-001', 'INV-001' -Area Inventory -ErrorVariable problems -ErrorAction SilentlyContinue
+        $rules.Id | Should -Be 'INV-001'
+        $problems.Count | Should -Be 0
     }
 
     It 'writes an error for an exact id that does not exist, and goes on with the rest' {
@@ -83,6 +95,19 @@ Describe 'Get-WinOpsAuditRule' {
     It 'writes no error when a wildcard matches nothing' {
         Get-WinOpsAuditRule -Id 'NOPE-*' -ErrorVariable problems -ErrorAction SilentlyContinue | Should -BeNullOrEmpty
         $problems.Count | Should -Be 0
+    }
+
+    It 'agrees with the other places that list the areas and the rules' {
+        $command = Get-Command Get-WinOpsAuditRule
+        $validAreas = $command.Parameters['Area'].Attributes |
+            Where-Object { $_ -is [System.Management.Automation.ValidateSetAttribute] } |
+            ForEach-Object ValidValues
+        $rules = Get-WinOpsAuditRule
+        ($rules.Area | Sort-Object -Unique) | Should -Be ($validAreas | Sort-Object)
+        # progress.yml lists the same rule ids, for roadmap-badges.
+        $catalog = Get-Content (Join-Path $PSScriptRoot '../progress.yml') -Raw
+        $catalogIds = [regex]::Matches($catalog, '\{ id: ([A-Z]+-\d{3}),') | ForEach-Object { $_.Groups[1].Value }
+        ($catalogIds | Sort-Object) | Should -Be ($rules.Id | Sort-Object)
     }
 
     It 'rejects an unknown area before doing anything' {

@@ -41,7 +41,8 @@ Windows administrators end up writing the same checks again and again: which cer
 this month, which folders have permissions granted to people instead of groups, which accounts
 nobody has used in months. Those scripts usually print text, so their output cannot be filtered,
 exported or compared with last week's. WinOpsAudit does those checks as proper PowerShell cmdlets:
-they return objects, have help and tests, and only read, so they are safe to run in production.
+they return objects, have help and tests, and only read, so they are meant to be run in production
+with read-only accounts.
 
 ## What it does
 
@@ -105,7 +106,7 @@ written in Markdown and built into the file `Get-Help` reads. More in
 
 | Decision | Why |
 | --- | --- |
-| [Read-only](docs/adr/0001-read-only-module.md) | Safe to run in production with read-only accounts; a person decides what to fix. |
+| [Read-only](docs/adr/0001-read-only-module.md) | Can run with read-only accounts, with no change window; a person decides what to fix. |
 | Objects out, formatting last | Results can be filtered, exported and compared; reports are a separate step. |
 | PowerShell 7 only | Runs on Windows and Linux, so the logic is tested on both; Windows PowerShell 5.1 no longer evolves. |
 | Help written in Markdown | Reviewed like any other change; [PlatyPS](https://github.com/PowerShell/platyPS) builds it into the help file. |
@@ -144,9 +145,9 @@ build.ps1            the build, the same locally and in CI
 - **Read-only by design**, and a test enforces it.
 - **No credentials in code or output.** Cmdlets that need them will take a `PSCredential` or a name
   from [SecretManagement](https://github.com/PowerShell/SecretManagement), never a password as text.
-- **Tested against a lab, not a real company.** The examples use made-up names such as
-  `contoso.test`; Active Directory rules will be tested against a disposable Samba domain with
-  synthetic data.
+- **A lab, never a real company.** The examples use made-up names such as `contoso.test`. The
+  Active Directory rules will be tested against a disposable Samba domain with synthetic data; that
+  lab does not exist yet.
 
 Report vulnerabilities privately: see [SECURITY.md](SECURITY.md).
 

@@ -16,6 +16,8 @@ function Get-WinOpsAuditRule {
 
     begin {
         $rules = Get-RuleData
+        # Each rule once, even when patterns overlap ('AD-*', 'AD-001') or the pipeline repeats ids.
+        $sent = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     }
 
     process {
@@ -23,8 +25,10 @@ function Get-WinOpsAuditRule {
             $found = $false
             foreach ($rule in $rules) {
                 if ($rule.Id -notlike $pattern) { continue }
-                if ($Area -and $rule.Area -notin $Area) { continue }
+                # The id exists: excluded by -Area is not "not found".
                 $found = $true
+                if ($Area -and $rule.Area -notin $Area) { continue }
+                if (-not $sent.Add($rule.Id)) { continue }
                 [pscustomobject]@{
                     PSTypeName = 'WinOpsAudit.Rule'
                     Id         = $rule.Id

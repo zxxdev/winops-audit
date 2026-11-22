@@ -32,10 +32,10 @@ Test results (JUnit) and coverage (JaCoCo) are written to `out/`.
 
 ## The module is read-only
 
-WinOpsAudit audits and reports; it never changes anything. Every exported cmdlet uses a verb that
-reads (`Get`, `Test`, `Find`, `Export`, `Compare`...), and a test fails if one does not. A change
-that writes to a system will not be accepted, however useful: see
-[ADR 0001](docs/adr/0001-read-only-module.md).
+WinOpsAudit audits and reports; it never changes the systems it audits. Every exported cmdlet uses
+a verb that reads (`Get`, `Test`, `Find`, `Compare`...) or `Export`, which only writes the report
+file you ask for. A test fails if any other verb is exported. A change that writes to an audited
+system will not be accepted, however useful: see [ADR 0001](docs/adr/0001-read-only-module.md).
 
 ## Help
 

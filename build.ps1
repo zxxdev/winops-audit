@@ -119,7 +119,11 @@ function Invoke-Help {
 function Invoke-HelpCheck {
     Invoke-Help
     $paths = 'docs/commands', 'src/WinOpsAudit/en-US'
+    # New, untracked files must count as differences too.
     git -C $root add --intent-to-add -- $paths
+    if ($LASTEXITCODE -ne 0) {
+        throw 'git add failed: cannot check the help.'
+    }
     git -C $root diff --exit-code --stat -- $paths
     if ($LASTEXITCODE -ne 0) {
         throw 'The help is out of date: run ./build.ps1 -Task Help and commit the result.'

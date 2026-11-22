@@ -23,8 +23,9 @@ privileged accounts, against production servers and the directory, often from a 
 
 ## Decision
 
-Option 2: the module is read-only. It exports only cmdlets with verbs that read (`Get`, `Test`,
-`Find`, `Export`, `Compare`...), and a test fails if a cmdlet with any other verb is ever exported.
+Option 2: the module never changes the systems it audits. It exports only cmdlets with verbs that
+read (`Get`, `Test`, `Find`, `Compare`...) or `Export`, which writes nothing but the report file the
+user asks for. A test fails if a cmdlet with any other verb is ever exported.
 
 ## Consequences
 
