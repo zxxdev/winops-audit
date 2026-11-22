@@ -8,13 +8,14 @@
 
 ## How it was tested
 
-<!-- Commands run, checks added, what was verified by hand. -->
+<!-- Commands run, tests added, what was verified by hand and on which system. -->
 
 ## Checklist
 
-- [ ] CI is green.
-- [ ] New dependencies are justified below (official package, older than 7 days, no unreviewed install scripts).
-- [ ] Docs and README updated if behaviour changed.
-- [ ] `dist/` rebuilt with `pnpm bundle` if `src/` changed.
+- [ ] CI is green on Linux and Windows.
+- [ ] The module is still read-only: no cmdlet changes anything.
+- [ ] Help written in `docs/commands` and built with `./build.ps1 -Task Help`.
+- [ ] Tool versions raised in `build/requirements.psd1` are justified below (official module, older than 7 days).
+- [ ] README and docs updated if behaviour changed.
 
 Closes #

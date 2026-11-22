@@ -19,7 +19,7 @@ to anyone. The rules are short, in the spirit of the
 ## Reporting
 
 If something here makes you uncomfortable, report it privately through GitHub's
-[private reporting form](https://github.com/zxxdev/roadmap-badges/security/advisories/new), and
+[private reporting form](https://github.com/zxxdev/winops-audit/security/advisories/new), and
 start the title with "Conduct". Reports are read by the maintainer only and are kept confidential.
 
 ## What happens next

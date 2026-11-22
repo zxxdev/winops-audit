@@ -1,28 +1,25 @@
 name: Bug report
-description: The action failed, or computed or drew something wrong.
+description: A cmdlet failed, or returned something wrong.
 labels: [bug]
 body:
   - type: input
-    id: run
+    id: command
     attributes:
-      label: Workflow run
-      description: A link to the run where you saw the problem, if it is public.
-      placeholder: https://github.com/<owner>/<repo>/actions/runs/...
+      label: Command
+      description: The command you ran, with its parameters. Leave out real names, servers and domains.
+      placeholder: Get-WinOpsAuditRule -Area Certificates
+    validations:
+      required: true
   - type: textarea
     id: what
     attributes:
       label: What happened
-      description: What you saw, and what you expected to see instead.
+      description: What you saw (the error or the output), and what you expected instead.
     validations:
       required: true
-  - type: textarea
-    id: config
-    attributes:
-      label: Your workflow step and catalog
-      description: The `uses:` step with its inputs, and the part of `progress.yml` involved.
-      render: yaml
   - type: input
-    id: version
+    id: environment
     attributes:
-      label: Action version
-      placeholder: v1, v1.2.0 or a commit SHA
+      label: Environment
+      description: Operating system, `$PSVersionTable.PSVersion` and the module version.
+      placeholder: Windows Server 2025, PowerShell 7.7.0, WinOpsAudit 0.1.0

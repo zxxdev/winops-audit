@@ -1,5 +1,5 @@
 name: Suggestion
-description: An idea to improve the action.
+description: An idea to improve the module, or an audit it should do.
 labels: [feat]
 body:
   - type: textarea
