@@ -1,0 +1,28 @@
+name: Bug report
+description: The action failed, or computed or drew something wrong.
+labels: [bug]
+body:
+  - type: input
+    id: run
+    attributes:
+      label: Workflow run
+      description: A link to the run where you saw the problem, if it is public.
+      placeholder: https://github.com/<owner>/<repo>/actions/runs/...
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected to see instead.
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Your workflow step and catalog
+      description: The `uses:` step with its inputs, and the part of `progress.yml` involved.
+      render: yaml
+  - type: input
+    id: version
+    attributes:
+      label: Action version
+      placeholder: v1, v1.2.0 or a commit SHA
