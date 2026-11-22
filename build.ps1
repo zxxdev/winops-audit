@@ -91,15 +91,13 @@ function Invoke-Help {
     Import-Tool Microsoft.PowerShell.PlatyPS
     Import-Module $manifest -Force
 
-    # The Markdown pages are the source of the help: one per cmdlet (Verb-Noun.md).
+    # The Markdown pages are the source of the help: one per cmdlet (Verb-Noun.md), written by
+    # hand. They are not rewritten here: Update-MarkdownCommandHelp changes the date and the
+    # blank lines on every run. The Pester tests check that every parameter of the code has
+    # its description in the built help, so a page that falls behind the code fails CI.
     $pages = @(Get-ChildItem -Path (Join-Path $root 'docs/commands/WinOpsAudit') -Filter '*-*.md')
 
-    # Bring them in line with the code (new or changed parameters, syntax).
-    foreach ($page in $pages) {
-        Update-MarkdownCommandHelp -Path $page.FullName -NoBackup | Out-Null
-    }
-
-    # A new parameter arrives as a placeholder for its description: it must be written.
+    # New-MarkdownCommandHelp leaves placeholders for what it cannot know: none may remain.
     $placeholders = $pages | Select-String -Pattern '{{' -SimpleMatch
     if ($placeholders) {
         $placeholders | ForEach-Object { Write-Information "$($_.Filename):$($_.LineNumber): $($_.Line.Trim())" -InformationAction Continue }

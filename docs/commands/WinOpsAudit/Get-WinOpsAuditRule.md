@@ -20,7 +20,7 @@ Lists the audit rules WinOpsAudit knows about.
 ### __AllParameterSets
 
 ```
-Get-WinOpsAuditRule [[-Id] <string[]>] [-Area <string[]>]
+Get-WinOpsAuditRule [[-Id] <string[]>] [-Area <string[]>] [<CommonParameters>]
 ```
 
 ## ALIASES
