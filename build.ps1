@@ -67,6 +67,7 @@ function Invoke-Test {
     $config = New-PesterConfiguration
     $config.Run.Path = Join-Path $root 'tests'
     $config.Run.Throw = $true
+    $config.Run.PassThru = $true
     $config.Output.Verbosity = 'Detailed'
     $config.TestResult.Enabled = $true
     $config.TestResult.OutputFormat = 'JUnitXml'
