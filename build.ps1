@@ -85,6 +85,9 @@ function Invoke-Test {
 }
 
 function Invoke-Help {
+    # PlatyPS reads optional help properties that may not exist, which strict mode turns into
+    # errors. Strict mode stays on everywhere else; this only affects this function's scope.
+    Set-StrictMode -Off
     Import-Tool Microsoft.PowerShell.PlatyPS
     $module = Import-Module $manifest -Force -PassThru
     $folder = Join-Path $root 'docs/commands'
