@@ -33,6 +33,11 @@ function Get-WinOpsAuditRule {
 
     Lists the Active Directory rules whose findings are serious.
 
+    .INPUTS
+    System.String
+
+    Rule ids, from the pipeline or from the Id property of the objects in it.
+
     .OUTPUTS
     WinOpsAudit.Rule
 
