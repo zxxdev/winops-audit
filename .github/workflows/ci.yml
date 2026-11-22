@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # PowerShell 7 runs on both: Linux checks the module logic, Windows is where it will run.
+    name: Lint, test and help (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Show the PowerShell version
+        run: $PSVersionTable | Format-Table -AutoSize | Out-String | Write-Output
+
+      # Bootstrap installs the tools pinned in build/requirements.psd1; HelpCheck fails if the
+      # built help differs from what is committed.
+      - name: Build and check
+        run: ./build.ps1 -Task Bootstrap, Lint, Test, HelpCheck

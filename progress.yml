@@ -1,0 +1,45 @@
+# The catalog of what WinOpsAudit will do, for roadmap-badges
+# (https://github.com/zxxdev/roadmap-badges). The badges are not connected yet: that comes when
+# roadmap-badges can read this file. Until then nothing here is turned into a percentage.
+#
+# An item is done when its tests pass in CI (evidence: junit, matched by test name). Adding items
+# lowers the percentage, and that is fine; items are never removed to raise it: a dropped item
+# stays with `dropped:` and its reason.
+project: winops-audit
+areas:
+  - id: cmdlets
+    title: Cmdlets with tests and help
+    evidence: junit
+    items:
+      - id: get-winopsauditrule
+        title: Get-WinOpsAuditRule
+        tests: ["Get-WinOpsAuditRule*"]
+      - id: get-winopsauditinventory
+        title: Inventory (hardware, system, updates, software)
+      - id: get-winopsauditcertificate
+        title: Certificates (expiry, algorithm, chain)
+      - id: get-winopsauditfolderpermission
+        title: Folder permissions (NTFS)
+      - id: get-winopsauditaccount
+        title: Active Directory accounts and groups
+      - id: export-winopsauditreport
+        title: Reports (HTML, CSV, JSON)
+      - id: compare-winopsauditreport
+        title: Compare two runs
+
+  - id: rules
+    title: Audit rules with a positive and a negative case
+    evidence: junit
+    items:
+      - { id: INV-001, title: "Hardware, operating system and installed updates" }
+      - { id: INV-002, title: "Installed software, from the uninstall registry keys" }
+      - { id: CRT-001, title: "Certificate expires within the warning window" }
+      - { id: CRT-002, title: "Weak signature algorithm or key size" }
+      - { id: CRT-003, title: "Server does not send its full chain" }
+      - { id: ACL-001, title: "Inheritance broken on a folder" }
+      - { id: ACL-002, title: "Permission granted to a user instead of a group" }
+      - { id: ACL-003, title: "Full control granted where modify would do" }
+      - { id: AD-001, title: "Account not used for a long time" }
+      - { id: AD-002, title: "Password set never to expire on a person's account" }
+      - { id: AD-003, title: "Member of a privileged group, nested groups included" }
+      - { id: AD-004, title: "Trusted for unconstrained delegation" }

@@ -1,0 +1,25 @@
+name: Bug report
+description: A cmdlet failed, or returned something wrong.
+labels: [bug]
+body:
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      description: The command you ran, with its parameters. Leave out real names, servers and domains.
+      placeholder: Get-WinOpsAuditRule -Area Certificates
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw (the error or the output), and what you expected instead.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, `$PSVersionTable.PSVersion` and the module version.
+      placeholder: Windows Server 2025, PowerShell 7.7.0, WinOpsAudit 0.1.0
