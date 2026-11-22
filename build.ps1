@@ -54,7 +54,8 @@ function Invoke-Lint {
     $paths = (Join-Path $root 'src'), (Join-Path $root 'tests'), (Join-Path $root 'build.ps1')
     $findings = $paths | ForEach-Object { Invoke-ScriptAnalyzer -Path $_ -Recurse -Settings $settings }
     if ($findings) {
-        $findings | Format-Table -AutoSize RuleName, Severity, ScriptName, Line, Message | Out-String | Write-Host
+        $table = $findings | Format-Table -AutoSize RuleName, Severity, ScriptName, Line, Message | Out-String
+        Write-Information $table -InformationAction Continue
         throw "PSScriptAnalyzer found $(@($findings).Count) problem(s)."
     }
     Write-Information 'PSScriptAnalyzer: no findings.' -InformationAction Continue
