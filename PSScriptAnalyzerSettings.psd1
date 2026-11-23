@@ -6,7 +6,8 @@
     Rules               = @{
         PSUseCompatibleSyntax      = @{ Enable = $true; TargetVersions = @('7.4') }
         PSPlaceOpenBrace           = @{ Enable = $true; OnSameLine = $true }
-        PSPlaceCloseBrace          = @{ Enable = $true; NoEmptyLineBefore = $true }
+        # One true brace style: '} else {' and '} catch {' on one line.
+        PSPlaceCloseBrace          = @{ Enable = $true; NoEmptyLineBefore = $true; NewLineAfter = $false }
         PSUseConsistentIndentation = @{ Enable = $true; IndentationSize = 4; Kind = 'space' }
         PSUseConsistentWhitespace  = @{
             Enable                                  = $true

@@ -48,11 +48,33 @@ function Invoke-Bootstrap {
     }
 }
 
+# PSScriptAnalyzer sometimes fails inside itself on its first run in a fresh session, while it
+# builds its cache of commands ("Object reference not set to an instance of an object", or
+# "The term 'Get-Command' is not recognized"); the same code passes on the next run. A crash like
+# that is retried; findings are not errors and are never retried away.
+function Invoke-AnalyzerWithRetry {
+    param(
+        [Parameter(Mandatory)] [string] $Path,
+        [Parameter(Mandatory)] [string] $Settings,
+        [int] $Attempts = 3
+    )
+    for ($attempt = 1; ; $attempt++) {
+        try {
+            return Invoke-ScriptAnalyzer -Path $Path -Recurse -Settings $Settings -ErrorAction Stop
+        } catch {
+            if ($attempt -ge $Attempts) {
+                throw
+            }
+            Write-Warning "PSScriptAnalyzer failed on attempt $attempt ($($_.Exception.Message)); trying again."
+        }
+    }
+}
+
 function Invoke-Lint {
     Import-Tool PSScriptAnalyzer
     $settings = Join-Path $root 'PSScriptAnalyzerSettings.psd1'
     $paths = (Join-Path $root 'src'), (Join-Path $root 'tests'), (Join-Path $root 'build.ps1')
-    $findings = $paths | ForEach-Object { Invoke-ScriptAnalyzer -Path $_ -Recurse -Settings $settings }
+    $findings = $paths | ForEach-Object { Invoke-AnalyzerWithRetry -Path $_ -Settings $settings }
     if ($findings) {
         $table = $findings | Format-Table -AutoSize RuleName, Severity, ScriptName, Line, Message | Out-String
         Write-Information $table -InformationAction Continue
