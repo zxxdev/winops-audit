@@ -14,7 +14,7 @@
 
 Every property is a plain value, so the object can be filtered, exported to CSV or JSON, or saved and compared with a later run. The list of updates itself comes from Get-WinOpsAuditUpdate.
 
-If the updates cannot be read, the object is still returned with UpdateCount and LastUpdateInstalledOn empty, and an error says why: empty means unknown, not zero. If the computer or its operating system cannot be read, the cmdlet stops with an error.
+If the updates cannot be read, the object is still returned with UpdateCount and LastUpdateInstalledOn empty, and an error says why: empty means unknown, not zero. If the computer, its firmware, its processors or its operating system cannot be read, the cmdlet stops with an error and returns nothing.
 
 It only runs on Windows. Nothing is changed.</maml:para>
     </maml:description>
@@ -243,7 +243,7 @@ Get-WinOpsAuditRule -Id 'AD-*' | Where-Object Severity -eq 'High'
 
 The programs are read from the uninstall keys of the registry, the same place "Installed apps" in Windows Settings reads them from: the 64-bit and 32-bit keys of the computer and the key of the current user. It never queries the CIM class Win32_Product, which makes Windows check, and sometimes repair, every MSI installation. Entries that "Installed apps" hides are left out too: parts of other programs (SystemComponent), updates of other programs, and entries with no name.
 
-If one of the keys cannot be read, the programs of the others are still returned and an error says which key failed.
+If one of the keys cannot be read, the programs of the others are still returned and an error says which key failed. An entry that cannot be opened is skipped with a warning that names it.
 
 It only runs on Windows. Nothing is changed.</maml:para>
     </maml:description>
@@ -294,7 +294,7 @@ It only runs on Windows. Nothing is changed.</maml:para>
     </command:returnValues>
     <maml:alertSet>
       <maml:alert>
-        <maml:para>Programs installed for other users who are not logged on are not listed: their part of the registry is only loaded while they are. Apps from the Microsoft Store are not listed either: they are not registered under the uninstall keys. Why the registry and not Win32_Product is explained in ADR 0002 of the project. This is audit rule INV-002.</maml:para>
+        <maml:para>Programs installed for other users who are not logged on are not listed: their part of the registry is only loaded while they are. Apps from the Microsoft Store are not listed either: they are not registered under the uninstall keys. It expects 64-bit Windows, as are Windows 11 and every Windows Server since 2008 R2: on 32-bit Windows each program would be listed twice. Why the registry and not Win32_Product is explained in ADR 0002 of the project. This is audit rule INV-002.</maml:para>
       </maml:alert>
     </maml:alertSet>
     <command:examples>
