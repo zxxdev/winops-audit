@@ -2,6 +2,108 @@
 <helpItems xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" schema="maml" xmlns="http://msh">
   <command:command>
     <command:details>
+      <command:name>Get-WinOpsAuditInventory</command:name>
+      <maml:description>
+        <maml:para>Describes this computer: hardware, operating system, domain and installed updates.</maml:para>
+      </maml:description>
+      <command:verb>Get</command:verb>
+      <command:noun>WinOpsAuditInventory</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Returns one object for the computer it runs on, read through CIM: who made it and which model it is, its serial number and firmware version, its processors and memory, its operating system, when it was installed and last started, the domain it belongs to, and how many updates are installed and when the last one was.
+
+Every property is a plain value, so the object can be filtered, exported to CSV or JSON, or saved and compared with a later run. The list of updates itself comes from Get-WinOpsAuditUpdate.
+
+If the updates cannot be read, the object is still returned with UpdateCount and LastUpdateInstalledOn empty, and an error says why: empty means unknown, not zero. If the computer or its operating system cannot be read, the cmdlet stops with an error.
+
+It only runs on Windows. Nothing is changed.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Get-WinOpsAuditInventory</maml:name>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters />
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>None</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>This cmdlet takes no input from the pipeline.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>WinOpsAudit.Inventory</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>One object with the properties ComputerName, Domain, PartOfDomain, Manufacturer, Model, SerialNumber, BiosVersion, Processor, ProcessorCount, CoreCount, LogicalProcessorCount, MemoryGB, OperatingSystem, OSVersion, OSArchitecture, InstallDate, LastBootUpTime, UpdateCount and LastUpdateInstalledOn.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para>The data comes from the CIM classes Win32_ComputerSystem, Win32_OperatingSystem, Win32_BIOS, Win32_Processor and Win32_QuickFixEngineering. MemoryGB is the memory Windows can use (TotalPhysicalMemory), a little less than what is installed. This is audit rule INV-001.</maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1: Describe this computer ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditInventory
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 2: A few properties as a table ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditInventory | Format-Table ComputerName, OperatingSystem, MemoryGB, LastUpdateInstalledOn
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 3: Save it to compare later ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditInventory | Export-Csv -Path .\inventory.csv -NoTypeInformation
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>Every property is a single value, so each becomes one column of the CSV file.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version</maml:linkText>
+        <maml:uri>https://github.com/zxxdev/winops-audit/blob/main/docs/commands/WinOpsAudit/Get-WinOpsAuditInventory.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-WinOpsAuditUpdate</maml:linkText>
+        <maml:uri>Get-WinOpsAuditUpdate.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-WinOpsAuditSoftware</maml:linkText>
+        <maml:uri>Get-WinOpsAuditSoftware.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Project on GitHub</maml:linkText>
+        <maml:uri>https://github.com/zxxdev/winops-audit</maml:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
       <command:name>Get-WinOpsAuditRule</command:name>
       <maml:description>
         <maml:para>Lists the audit rules WinOpsAudit knows about.</maml:para>
@@ -120,6 +222,223 @@ Get-WinOpsAuditRule -Id 'AD-*' | Where-Object Severity -eq 'High'
       <maml:navigationLink>
         <maml:linkText>Online Version</maml:linkText>
         <maml:uri>https://github.com/zxxdev/winops-audit/blob/main/docs/commands/WinOpsAudit/Get-WinOpsAuditRule.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Project on GitHub</maml:linkText>
+        <maml:uri>https://github.com/zxxdev/winops-audit</maml:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
+      <command:name>Get-WinOpsAuditSoftware</command:name>
+      <maml:description>
+        <maml:para>Lists the programs installed on this computer.</maml:para>
+      </maml:description>
+      <command:verb>Get</command:verb>
+      <command:noun>WinOpsAuditSoftware</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Returns one object per installed program: its name, version, publisher and install date, whether it is a 64-bit or a 32-bit program, and whether it is installed for the whole computer or only for the current user.
+
+The programs are read from the uninstall keys of the registry, the same place "Installed apps" in Windows Settings reads them from: the 64-bit and 32-bit keys of the computer and the key of the current user. It never queries the CIM class Win32_Product, which makes Windows check, and sometimes repair, every MSI installation. Entries that "Installed apps" hides are left out too: parts of other programs (SystemComponent), updates of other programs, and entries with no name.
+
+If one of the keys cannot be read, the programs of the others are still returned and an error says which key failed.
+
+It only runs on Windows. Nothing is changed.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Get-WinOpsAuditSoftware</maml:name>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+          <maml:name>Name</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String[]</maml:name>
+          </dev:type>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="false" globbing="true" pipelineInput="false" position="0" aliases="none">
+        <maml:name>Name</maml:name>
+        <maml:description>
+          <maml:para>One or more program names. Wildcards are allowed, for example `*Java*`, and the case does not matter. An exact name that matches no installed program writes an error and the command goes on with the rest; a wildcard that matches nothing is not an error.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String[]</maml:name>
+        </dev:type>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>None</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>This cmdlet takes no input from the pipeline.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>WinOpsAudit.Software</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>One object per program, with the properties ComputerName, Name, Version, Publisher, InstallDate, Architecture (x64, x86, or empty for programs of the current user, whose key does not say), Scope (Machine or CurrentUser) and UninstallKey (the name of its registry key). The default table shows Name, Version, Publisher, Architecture and Scope.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para>Programs installed for other users who are not logged on are not listed: their part of the registry is only loaded while they are. Apps from the Microsoft Store are not listed either: they are not registered under the uninstall keys. Why the registry and not Win32_Product is explained in ADR 0002 of the project. This is audit rule INV-002.</maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1: List the installed programs ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditSoftware
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 2: Find a program by name ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditSoftware -Name '*Java*'
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>Wildcards find every program whose name matches. An exact name that is not installed writes an error.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 3: The 32-bit programs, exported to a file ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditSoftware | Where-Object Architecture -eq 'x86' | Export-Csv -Path .\software-x86.csv -NoTypeInformation
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version</maml:linkText>
+        <maml:uri>https://github.com/zxxdev/winops-audit/blob/main/docs/commands/WinOpsAudit/Get-WinOpsAuditSoftware.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-WinOpsAuditInventory</maml:linkText>
+        <maml:uri>Get-WinOpsAuditInventory.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>ADR 0002: installed software from the registry</maml:linkText>
+        <maml:uri>https://github.com/zxxdev/winops-audit/blob/main/docs/adr/0002-software-from-the-registry.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Project on GitHub</maml:linkText>
+        <maml:uri>https://github.com/zxxdev/winops-audit</maml:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
+      <command:name>Get-WinOpsAuditUpdate</command:name>
+      <maml:description>
+        <maml:para>Lists the updates installed on this computer.</maml:para>
+      </maml:description>
+      <command:verb>Get</command:verb>
+      <command:noun>WinOpsAuditUpdate</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Returns one object per installed update, read from the CIM class Win32_QuickFixEngineering: its KB number, its kind (Update, Security Update...), when it was installed and by whom. The oldest come first; updates with no known date come before them.
+
+Windows keeps the install date as text, in more than one format. It is turned into a date, and left empty when Windows does not record it, rather than guessed.
+
+It only runs on Windows. Nothing is changed.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Get-WinOpsAuditUpdate</maml:name>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters />
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>None</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>This cmdlet takes no input from the pipeline.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>WinOpsAudit.Update</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>One object per update, with the properties ComputerName, HotFixId, Description, InstalledOn and InstalledBy. The default table leaves out ComputerName and shows the date without the time.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para>Win32_QuickFixEngineering lists the updates of Windows itself installed through Windows Update or as packages. It does not list updates of other products (Office, for example) or of Microsoft Defender's definitions. Get-HotFix reads the same class; the tests check on Windows that both give the same updates and dates. This is part of audit rule INV-001.</maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1: List the installed updates ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditUpdate
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 2: Is a given update installed? ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditUpdate | Where-Object HotFixId -eq 'KB5001001'
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>No output means it is not installed.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 3: The updates of the last 30 days ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditUpdate | Where-Object InstalledOn -gt (Get-Date).AddDays(-30)
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version</maml:linkText>
+        <maml:uri>https://github.com/zxxdev/winops-audit/blob/main/docs/commands/WinOpsAudit/Get-WinOpsAuditUpdate.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-WinOpsAuditInventory</maml:linkText>
+        <maml:uri>Get-WinOpsAuditInventory.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Project on GitHub</maml:linkText>
