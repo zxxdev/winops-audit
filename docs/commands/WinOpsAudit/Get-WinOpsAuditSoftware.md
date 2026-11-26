@@ -33,7 +33,7 @@ Returns one object per installed program: its name, version, publisher and insta
 
 The programs are read from the uninstall keys of the registry, the same place "Installed apps" in Windows Settings reads them from: the 64-bit and 32-bit keys of the computer and the key of the current user. It never queries the CIM class Win32_Product, which makes Windows check, and sometimes repair, every MSI installation. Entries that "Installed apps" hides are left out too: parts of other programs (SystemComponent), updates of other programs, and entries with no name.
 
-If one of the keys cannot be read, the programs of the others are still returned and an error says which key failed.
+If one of the keys cannot be read, the programs of the others are still returned and an error says which key failed. An entry that cannot be opened is skipped with a warning that names it.
 
 It only runs on Windows. Nothing is changed.
 
@@ -103,7 +103,7 @@ One object per program, with the properties ComputerName, Name, Version, Publish
 
 ## NOTES
 
-Programs installed for other users who are not logged on are not listed: their part of the registry is only loaded while they are. Apps from the Microsoft Store are not listed either: they are not registered under the uninstall keys. Why the registry and not Win32_Product is explained in ADR 0002 of the project. This is audit rule INV-002.
+Programs installed for other users who are not logged on are not listed: their part of the registry is only loaded while they are. Apps from the Microsoft Store are not listed either: they are not registered under the uninstall keys. It expects 64-bit Windows, as are Windows 11 and every Windows Server since 2008 R2: on 32-bit Windows each program would be listed twice. Why the registry and not Win32_Product is explained in ADR 0002 of the project. This is audit rule INV-002.
 
 ## RELATED LINKS
 

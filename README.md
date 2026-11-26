@@ -226,7 +226,8 @@ Report vulnerabilities privately: see [SECURITY.md](SECURITY.md).
   not of other products such as Office, nor Defender's definitions.
 - `Get-WinOpsAuditSoftware` does not list Store apps, nor programs installed only for users who
   are not logged on (their part of the registry is not loaded).
-- Windows PowerShell 5.1 is not supported.
+- 64-bit Windows only (Windows 11 and every Windows Server since 2008 R2 are). Windows PowerShell
+  5.1 is not supported.
 - The Active Directory rules read the directory over LDAP; they will not use Microsoft's
   `ActiveDirectory` module, which only exists on Windows.
 

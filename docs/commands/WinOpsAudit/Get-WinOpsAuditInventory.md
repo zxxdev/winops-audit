@@ -33,7 +33,7 @@ Returns one object for the computer it runs on, read through CIM: who made it an
 
 Every property is a plain value, so the object can be filtered, exported to CSV or JSON, or saved and compared with a later run. The list of updates itself comes from Get-WinOpsAuditUpdate.
 
-If the updates cannot be read, the object is still returned with UpdateCount and LastUpdateInstalledOn empty, and an error says why: empty means unknown, not zero. If the computer or its operating system cannot be read, the cmdlet stops with an error.
+If the updates cannot be read, the object is still returned with UpdateCount and LastUpdateInstalledOn empty, and an error says why: empty means unknown, not zero. If the computer, its firmware, its processors or its operating system cannot be read, the cmdlet stops with an error and returns nothing.
 
 It only runs on Windows. Nothing is changed.
 

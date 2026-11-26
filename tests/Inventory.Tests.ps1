@@ -130,7 +130,7 @@ Describe 'Get-WinOpsAuditInventory (INV-001)' {
         $problems[0].CategoryInfo.Category | Should -Be 'ReadError'
     }
 
-    It 'stops, with nothing returned, when the operating system cannot be read' {
+    It 'stops with the reason when the operating system cannot be read' {
         Mock -ModuleName WinOpsAudit Get-CimData -ParameterFilter { $ClassName -eq 'Win32_OperatingSystem' } {
             throw 'The RPC server is unavailable'
         }

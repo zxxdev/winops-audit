@@ -59,8 +59,9 @@ function Get-WinOpsAuditSoftware {
             Write-Error -Message $message -Category ObjectNotFound -TargetObject $pattern
         }
     }
-    # Each program once, even when the patterns overlap.
+    # Each program once, even when the patterns overlap. Not sorted by Version: it is text, and
+    # "10.0" would come before "9.0".
     $programs |
         Where-Object { $program = $_; $Name.Where({ $program.Name -like $_ }, 'First') } |
-        Sort-Object -Property Name, Version, Architecture
+        Sort-Object -Property Name, Architecture, Scope
 }

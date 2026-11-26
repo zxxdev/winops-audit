@@ -38,7 +38,13 @@ function Get-UninstallEntry {
         }
         try {
             foreach ($keyName in $uninstall.GetSubKeyNames()) {
-                $entry = $uninstall.OpenSubKey($keyName)
+                try {
+                    $entry = $uninstall.OpenSubKey($keyName)
+                } catch {
+                    # An entry with a restrictive ACL must not hide the rest of the key.
+                    Write-Warning "Skipped the uninstall entry '$keyName' ($View): $($_.Exception.Message)"
+                    continue
+                }
                 if (-not $entry) {
                     continue
                 }
