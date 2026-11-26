@@ -9,7 +9,7 @@ BeforeAll {
     Import-Module $manifest -Force
 
     # One uninstall entry as Get-UninstallEntry returns it: every value, $null when missing.
-    function New-UninstallEntry {
+    function Get-SampleUninstallEntry {
         param(
             [string] $KeyName,
             [string] $DisplayName,
@@ -224,20 +224,20 @@ Describe 'Get-WinOpsAuditSoftware (INV-002)' {
     BeforeEach {
         Mock -ModuleName WinOpsAudit Test-WindowsHost { $true }
         Mock -ModuleName WinOpsAudit Get-UninstallEntry -ParameterFilter { $View -eq 'Machine64' } {
-            New-UninstallEntry -KeyName '{6F1A2B3C-0001}' -DisplayName 'Contoso Backup Agent' -DisplayVersion '4.2.0' -Publisher 'Contoso Ltd' -InstallDate '20260301'
+            Get-SampleUninstallEntry -KeyName '{6F1A2B3C-0001}' -DisplayName 'Contoso Backup Agent' -DisplayVersion '4.2.0' -Publisher 'Contoso Ltd' -InstallDate '20260301'
             # What "Installed apps" does not show either:
-            New-UninstallEntry -KeyName '{6F1A2B3C-0002}' -DisplayName 'Contoso Backup Agent Core' -DisplayVersion '4.2.0' -SystemComponent 1
-            New-UninstallEntry -KeyName 'KB000001' -DisplayName 'Update for Contoso Backup Agent (KB000001)' -ParentKeyName '{6F1A2B3C-0001}'
-            New-UninstallEntry -KeyName '{6F1A2B3C-0003}' -DisplayName 'Security Update for Contoso Office' -ReleaseType 'Security Update'
-            New-UninstallEntry -KeyName 'OrphanKey'
+            Get-SampleUninstallEntry -KeyName '{6F1A2B3C-0002}' -DisplayName 'Contoso Backup Agent Core' -DisplayVersion '4.2.0' -SystemComponent 1
+            Get-SampleUninstallEntry -KeyName 'KB000001' -DisplayName 'Update for Contoso Backup Agent (KB000001)' -ParentKeyName '{6F1A2B3C-0001}'
+            Get-SampleUninstallEntry -KeyName '{6F1A2B3C-0003}' -DisplayName 'Security Update for Contoso Office' -ReleaseType 'Security Update'
+            Get-SampleUninstallEntry -KeyName 'OrphanKey'
         }
         Mock -ModuleName WinOpsAudit Get-UninstallEntry -ParameterFilter { $View -eq 'Machine32' } {
-            New-UninstallEntry -KeyName 'FabrikamViewer' -DisplayName 'Fabrikam Viewer ' -DisplayVersion '1.0' -Publisher 'Fabrikam' -InstallDate 'not a date'
+            Get-SampleUninstallEntry -KeyName 'FabrikamViewer' -DisplayName 'Fabrikam Viewer ' -DisplayVersion '1.0' -Publisher 'Fabrikam' -InstallDate 'not a date'
             # Shown in "Installed apps": SystemComponent is 0, not 1.
-            New-UninstallEntry -KeyName 'FabrikamTools' -DisplayName 'Fabrikam Tools' -DisplayVersion '2.5' -Publisher 'Fabrikam' -SystemComponent 0
+            Get-SampleUninstallEntry -KeyName 'FabrikamTools' -DisplayName 'Fabrikam Tools' -DisplayVersion '2.5' -Publisher 'Fabrikam' -SystemComponent 0
         }
         Mock -ModuleName WinOpsAudit Get-UninstallEntry -ParameterFilter { $View -eq 'User' } {
-            New-UninstallEntry -KeyName 'TailspinNotes' -DisplayName 'Tailspin Notes' -DisplayVersion '3.1' -Publisher 'Tailspin' -InstallDate '20261101'
+            Get-SampleUninstallEntry -KeyName 'TailspinNotes' -DisplayName 'Tailspin Notes' -DisplayVersion '3.1' -Publisher 'Tailspin' -InstallDate '20261101'
         }
     }
 
