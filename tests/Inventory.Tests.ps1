@@ -119,7 +119,8 @@ Describe 'Get-WinOpsAuditInventory (INV-001)' {
         }
         # The error stream, as the user sees it. -ErrorVariable would also collect the error the
         # cmdlet catches and handles inside.
-        $output = Get-WinOpsAuditInventory 2>&1
+        # -ErrorAction Continue: the build runs with $ErrorActionPreference = 'Stop'.
+        $output = Get-WinOpsAuditInventory -ErrorAction Continue 2>&1
         $problems = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
         $inventory = $output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }
         $inventory.ComputerName | Should -Be 'SRV-FILE01'
@@ -202,6 +203,14 @@ Describe 'Dates as Windows writes them' {
     ) {
         $date = InModuleScope WinOpsAudit -Parameters @{ Text = $Text } { ConvertFrom-WindowsDate $Text }
         $date | Should -Be ([datetime]$Expected)
+    }
+
+    # Found on the Windows runner: there the type data of PowerShell has already turned
+    # InstalledOn into a date, time included, before the module reads it.
+    It 'keeps a value that is already a date' {
+        $when = [datetime]::new(2026, 11, 12)
+        $date = InModuleScope WinOpsAudit -Parameters @{ When = $when } { ConvertFrom-WindowsDate $When }
+        $date | Should -Be $when
     }
 
     It 'reads a FILETIME written in hexadecimal' {
@@ -305,7 +314,7 @@ Describe 'Get-WinOpsAuditSoftware (INV-002)' {
             throw 'Requested registry access is not allowed.'
         }
         # The error stream, as the user sees it (see the same check for the inventory).
-        $output = Get-WinOpsAuditSoftware 2>&1
+        $output = Get-WinOpsAuditSoftware -ErrorAction Continue 2>&1
         $problems = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
         $software = $output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }
         $software.Name | Should -Be 'Contoso Backup Agent', 'Tailspin Notes'
@@ -360,8 +369,9 @@ Describe 'On a real Windows computer' -Skip:(-not $IsWindows) {
         $theirs = @(Get-HotFix)
         @($ours.HotFixId | Sort-Object) | Should -Be @($theirs.HotFixID | Sort-Object)
         foreach ($fix in $theirs | Where-Object InstalledOn) {
-            $match = $ours | Where-Object HotFixId -EQ $fix.HotFixID
-            $match.InstalledOn.Date | Should -Be $fix.InstalledOn.Date -Because "$($fix.HotFixID) has a date"
+            $match = @($ours | Where-Object HotFixId -EQ $fix.HotFixID)[0]
+            $match.InstalledOn | Should -Not -BeNullOrEmpty -Because "Get-HotFix gives $($fix.HotFixID) a date"
+            $match.InstalledOn.Date | Should -Be $fix.InstalledOn.Date
         }
     }
 

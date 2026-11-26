@@ -11,7 +11,10 @@ function ConvertFrom-WindowsDate {
                          language of the system
       16 hex digits      InstalledOn on some older systems: a FILETIME (01dc5a8f3e2b4000)
 
-    Anything else, or nothing, gives $null: an unknown date is reported as unknown, not guessed.
+    A value that is already a DateTime is returned as it is: on Windows, the type data of
+    PowerShell turns InstalledOn of Win32_QuickFixEngineering into a date before the module sees
+    it. Anything else, or nothing, gives $null: an unknown date is reported as unknown, not
+    guessed.
     #>
     [CmdletBinding()]
     [OutputType([datetime])]
@@ -22,6 +25,9 @@ function ConvertFrom-WindowsDate {
         [object] $Value
     )
 
+    if ($Value -is [datetime]) {
+        return $Value
+    }
     $text = "$Value".Trim()
     if (-not $text) {
         return $null

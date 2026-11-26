@@ -40,8 +40,9 @@ jobs:
         run: ./build.ps1 -Task Bootstrap, Lint, Test, HelpCheck
 
       # The inventory of the runner itself: real output from a real Windows, to read in the log.
+      # Also when a test fails, to see what the system really gave.
       - name: Show the inventory of this runner
-        if: runner.os == 'Windows'
+        if: ${{ !cancelled() && runner.os == 'Windows' }}
         run: |
           Import-Module ./src/WinOpsAudit/WinOpsAudit.psd1
           Get-WinOpsAuditInventory | Format-List | Out-String -Width 120 | Write-Output
