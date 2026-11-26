@@ -15,7 +15,14 @@ areas:
         title: Get-WinOpsAuditRule
         tests: ["Get-WinOpsAuditRule*"]
       - id: get-winopsauditinventory
-        title: Inventory (hardware, system, updates, software)
+        title: Inventory (hardware, system, update summary)
+        tests: ["Get-WinOpsAuditInventory*"]
+      - id: get-winopsauditupdate
+        title: Installed updates
+        tests: ["Get-WinOpsAuditUpdate*"]
+      - id: get-winopsauditsoftware
+        title: Installed software
+        tests: ["Get-WinOpsAuditSoftware*"]
       - id: get-winopsauditcertificate
         title: Certificates (expiry, algorithm, chain)
       - id: get-winopsauditfolderpermission
@@ -31,8 +38,8 @@ areas:
     title: Audit rules with a positive and a negative case
     evidence: junit
     items:
-      - { id: INV-001, title: "Hardware, operating system and installed updates" }
-      - { id: INV-002, title: "Installed software, from the uninstall registry keys" }
+      - { id: INV-001, title: "Hardware, operating system and installed updates", tests: ["*(INV-001)*"] }
+      - { id: INV-002, title: "Installed software, from the uninstall registry keys", tests: ["*(INV-002)*"] }
       - { id: CRT-001, title: "Certificate expires within the warning window" }
       - { id: CRT-002, title: "Weak signature algorithm or key size" }
       - { id: CRT-003, title: "Server does not send its full chain" }
