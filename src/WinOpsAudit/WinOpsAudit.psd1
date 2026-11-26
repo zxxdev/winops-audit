@@ -10,10 +10,18 @@
     CompatiblePSEditions = @('Core')
 
     # Only read-only verbs: the tests fail if a Set-, Remove- or similar cmdlet is ever exported.
-    FunctionsToExport    = @('Get-WinOpsAuditRule')
+    FunctionsToExport    = @(
+        'Get-WinOpsAuditInventory'
+        'Get-WinOpsAuditRule'
+        'Get-WinOpsAuditSoftware'
+        'Get-WinOpsAuditUpdate'
+    )
     CmdletsToExport      = @()
     VariablesToExport    = @()
     AliasesToExport      = @()
+
+    # Default table views for the objects; they change how they look, not what they hold.
+    FormatsToProcess     = @('WinOpsAudit.Format.ps1xml')
 
     PrivateData          = @{
         PSData = @{

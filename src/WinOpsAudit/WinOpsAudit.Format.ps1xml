@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default views: how the objects look on screen when nothing else is asked for. They change
+  nothing in the objects themselves: Select-Object, Export-Csv and ConvertTo-Json still see
+  every property.
+-->
+<Configuration>
+  <ViewDefinitions>
+    <View>
+      <Name>WinOpsAudit.Software</Name>
+      <ViewSelectedBy>
+        <TypeName>WinOpsAudit.Software</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader />
+          <TableColumnHeader />
+          <TableColumnHeader />
+          <TableColumnHeader />
+          <TableColumnHeader />
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>Name</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Version</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Publisher</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Architecture</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Scope</PropertyName>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+    <View>
+      <Name>WinOpsAudit.Update</Name>
+      <ViewSelectedBy>
+        <TypeName>WinOpsAudit.Update</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader />
+          <TableColumnHeader />
+          <TableColumnHeader>
+            <Label>InstalledOn</Label>
+          </TableColumnHeader>
+          <TableColumnHeader />
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>HotFixId</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Description</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <!-- The date only: Windows records the day, not the time. -->
+                <ScriptBlock>if ($_.InstalledOn) { $_.InstalledOn.ToString('yyyy-MM-dd') }</ScriptBlock>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>InstalledBy</PropertyName>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+  </ViewDefinitions>
+</Configuration>

@@ -21,7 +21,12 @@ Describe 'The module' {
     }
 
     It 'keeps its helpers private' {
-        Get-Command -Module WinOpsAudit -Name 'Get-RuleData' -ErrorAction Ignore | Should -BeNullOrEmpty
+        $helpers = Get-ChildItem -Path (Join-Path $PSScriptRoot '../src/WinOpsAudit/Private') -Filter '*.ps1'
+        $helpers.Count | Should -BeGreaterThan 0
+        foreach ($helper in $helpers) {
+            Get-Command -Module WinOpsAudit -Name $helper.BaseName -ErrorAction Ignore |
+                Should -BeNullOrEmpty -Because "$($helper.BaseName) is a private helper"
+        }
     }
 
     It 'is read-only: every exported cmdlet uses a verb that does not change anything' {
