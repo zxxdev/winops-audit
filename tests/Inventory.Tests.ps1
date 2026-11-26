@@ -117,7 +117,11 @@ Describe 'Get-WinOpsAuditInventory (INV-001)' {
         Mock -ModuleName WinOpsAudit Get-CimData -ParameterFilter { $ClassName -eq 'Win32_QuickFixEngineering' } {
             throw 'Access denied'
         }
-        $inventory = Get-WinOpsAuditInventory -ErrorVariable problems -ErrorAction SilentlyContinue
+        # The error stream, as the user sees it. -ErrorVariable would also collect the error the
+        # cmdlet catches and handles inside.
+        $output = Get-WinOpsAuditInventory 2>&1
+        $problems = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
+        $inventory = $output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }
         $inventory.ComputerName | Should -Be 'SRV-FILE01'
         $inventory.UpdateCount | Should -BeNullOrEmpty -Because 'unknown is not the same as zero updates'
         $inventory.LastUpdateInstalledOn | Should -BeNullOrEmpty
@@ -300,7 +304,10 @@ Describe 'Get-WinOpsAuditSoftware (INV-002)' {
         Mock -ModuleName WinOpsAudit Get-UninstallEntry -ParameterFilter { $View -eq 'Machine32' } {
             throw 'Requested registry access is not allowed.'
         }
-        $software = Get-WinOpsAuditSoftware -ErrorVariable problems -ErrorAction SilentlyContinue
+        # The error stream, as the user sees it (see the same check for the inventory).
+        $output = Get-WinOpsAuditSoftware 2>&1
+        $problems = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
+        $software = $output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }
         $software.Name | Should -Be 'Contoso Backup Agent', 'Tailspin Notes'
         $problems.Count | Should -Be 1
         $problems[0].CategoryInfo.Category | Should -Be 'ReadError'
