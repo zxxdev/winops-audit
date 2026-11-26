@@ -3,8 +3,8 @@
     # Status: Planned (not written yet) or Available (has its cmdlet, tests and help).
     # Session: the roadmap session that brings the rule.
     Rules = @(
-        @{ Id = 'INV-001'; Area = 'Inventory'; Title = 'Hardware, operating system and installed updates'; Severity = 'Info'; Status = 'Planned'; Session = 'WK-02' }
-        @{ Id = 'INV-002'; Area = 'Inventory'; Title = 'Installed software, read from the uninstall registry keys'; Severity = 'Info'; Status = 'Planned'; Session = 'WK-02' }
+        @{ Id = 'INV-001'; Area = 'Inventory'; Title = 'Hardware, operating system and installed updates'; Severity = 'Info'; Status = 'Available'; Session = 'WK-02' }
+        @{ Id = 'INV-002'; Area = 'Inventory'; Title = 'Installed software, read from the uninstall registry keys'; Severity = 'Info'; Status = 'Available'; Session = 'WK-02' }
         @{ Id = 'CRT-001'; Area = 'Certificates'; Title = 'Certificate expires within the warning window'; Severity = 'High'; Status = 'Planned'; Session = 'WK-03' }
         @{ Id = 'CRT-002'; Area = 'Certificates'; Title = 'Weak signature algorithm or key size'; Severity = 'Medium'; Status = 'Planned'; Session = 'WK-03' }
         @{ Id = 'CRT-003'; Area = 'Certificates'; Title = 'Server does not send its full chain'; Severity = 'Medium'; Status = 'Planned'; Session = 'WK-03' }

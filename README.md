@@ -18,9 +18,8 @@ flowchart LR
 [![CI](https://github.com/zxxdev/winops-audit/actions/workflows/ci.yml/badge.svg)](https://github.com/zxxdev/winops-audit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> **Status: early.** The module structure, the build and the rule catalog are in place; the audits
-> themselves come one area at a time (see the [roadmap](#limitations-and-roadmap)). Terminal
-> captures of real audits come with the first one, the inventory.
+> **Status: early.** The first area, the inventory, works; the other audits come one area at a
+> time (see the [roadmap](#limitations-and-roadmap)).
 
 ## Contents
 
@@ -46,7 +45,69 @@ with read-only accounts.
 
 ## What it does
 
-Today: the catalog of audit rules, with `Get-WinOpsAuditRule`.
+Today: the inventory of the computer it runs on, and the catalog of audit rules.
+
+| Cmdlet | Returns |
+| --- | --- |
+| `Get-WinOpsAuditInventory` | One object for the computer: hardware, operating system, domain, how many updates and the date of the last one |
+| `Get-WinOpsAuditUpdate` | One object per installed update |
+| `Get-WinOpsAuditSoftware` | One object per installed program, read from the registry (never from `Win32_Product`) |
+| `Get-WinOpsAuditRule` | The audit rules, available and planned |
+
+This is real output, from the Windows Server 2025 runner of this repository's
+[CI](https://github.com/zxxdev/winops-audit/actions/workflows/ci.yml) (the step "Show the inventory
+of this runner"), on 2026-11-26:
+
+```powershell
+Get-WinOpsAuditInventory | Format-List ComputerName, Model, Processor, CoreCount, MemoryGB, OperatingSystem, UpdateCount, LastUpdateInstalledOn
+```
+
+```text
+ComputerName          : runnervmbpeip
+Model                 : Virtual Machine
+Processor             : AMD EPYC 9V45 96-Core Processor
+CoreCount             : 2
+MemoryGB              : 16
+OperatingSystem       : Microsoft Windows Server 2025 Datacenter
+UpdateCount           : 3
+LastUpdateInstalledOn : 11/12/2026 12:00:00 AM
+```
+
+```powershell
+Get-WinOpsAuditUpdate
+```
+
+```text
+HotFixId  Description     InstalledOn InstalledBy
+--------  -----------     ----------- -----------
+KB5127690 Update          2026-11-12
+KB5131079 Security Update 2026-11-12
+KB5136489 Update          2026-11-12
+```
+
+```powershell
+Get-WinOpsAuditSoftware -Name '*PowerShell*', 'Git*', '*Python*'
+```
+
+```text
+Name                                              Version        Publisher                     Architecture Scope
+----                                              -------        ---------                     ------------ -----
+Git                                               2.56.1         The Git Development Community x64          Machine
+GitHub CLI                                        2.104.0        GitHub, Inc.                  x64          Machine
+Miniconda3 py314_26.9.4-1 (Python 3.14.10 64-bit) py314_26.9.4-1 Anaconda, Inc.                x64          Machine
+PowerShell 7-x64                                  7.6.10.0       Microsoft Corporation         x64          Machine
+PowerShell Extensions for SQL Server 2016         13.2.5026.0    Microsoft Corporation         x64          Machine
+Python Launcher                                   3.15.2150.0    Python Software Foundation    x86          Machine
+```
+
+The tables are only the default view. The objects keep every property, so they can be filtered and
+exported as they are:
+
+```powershell
+Get-WinOpsAuditSoftware | Where-Object Architecture -eq 'x86' | Export-Csv .\software-x86.csv
+```
+
+And the rule catalog:
 
 ```powershell
 Get-WinOpsAuditRule -Area Certificates | Format-Table Id, Severity, Status, Title
@@ -82,6 +143,7 @@ git clone https://github.com/zxxdev/winops-audit.git
 cd winops-audit
 Import-Module ./src/WinOpsAudit/WinOpsAudit.psd1
 Get-WinOpsAuditRule
+Get-WinOpsAuditInventory   # Windows only: reads CIM and the registry
 ```
 
 The module is not on the PowerShell Gallery yet: that is the 1.0 release.
@@ -98,16 +160,18 @@ flowchart LR
 ```
 
 A standard script module: the manifest says what it exports and what it needs, the cmdlets live
-one per file in `Public/`, and helpers that may change freely live in `Private/`. The help is
-written in Markdown and built into the file `Get-Help` reads. More in
-[docs/architecture.md](docs/architecture.md).
+one per file in `Public/`, and helpers that may change freely live in `Private/`. Only two private
+helpers touch Windows, one for CIM and one for the registry, so the tests can replace them. The
+help is written in Markdown and built into the file `Get-Help` reads, and a format file gives the
+objects their default tables. More in [docs/architecture.md](docs/architecture.md).
 
 ## Technical decisions
 
 | Decision | Why |
 | --- | --- |
 | [Read-only](docs/adr/0001-read-only-module.md) | Can run with read-only accounts, with no change window; a person decides what to fix. |
-| Objects out, formatting last | Results can be filtered, exported and compared; reports are a separate step. |
+| [Installed software from the registry](docs/adr/0002-software-from-the-registry.md) | `Win32_Product` is slow and makes Windows check, and sometimes repair, every MSI installation. |
+| Objects out, formatting last | Results can be filtered, exported and compared; the tables come from a format file, not from the cmdlets. |
 | PowerShell 7 only | Runs on Windows and Linux, so the logic is tested on both; Windows PowerShell 5.1 no longer evolves. |
 | Help written in Markdown | Reviewed like any other change; [PlatyPS](https://github.com/PowerShell/platyPS) builds it into the help file. |
 
@@ -117,6 +181,10 @@ Every pull request runs `./build.ps1` on **Linux and Windows**:
 
 - **PSScriptAnalyzer** with the default rules plus formatting rules; any finding fails the build.
 - **Pester** tests, with code coverage measured by Pester; the build fails below 80%.
+- **Mocks and the real system.** The unit tests replace the helpers that read CIM and the registry
+  with prepared data, so the logic is tested on Linux too. On Windows, more tests run the cmdlets
+  against the real system, and the updates are compared with `Get-HotFix`. That test caught a bug
+  the mocks could not: on Windows, PowerShell hands over the update dates already converted.
 - Tests that guard the design: the manifest exports exactly the public cmdlets, every exported
   cmdlet uses a read-only verb, and every cmdlet has a synopsis, a description, an example and a
   description for each parameter.
@@ -133,7 +201,7 @@ Every pull request runs `./build.ps1` on **Linux and Windows**:
 PlatyPS) for the current user. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```text
-src/WinOpsAudit/     the module: manifest, Public/, Private/, Data/, en-US/ (built help)
+src/WinOpsAudit/     the module: manifest, Public/, Private/, Data/, en-US/ (built help), format file
 tests/               Pester tests
 docs/commands/       the help, in Markdown (the source)
 docs/adr/            decision records
@@ -153,14 +221,18 @@ Report vulnerabilities privately: see [SECURITY.md](SECURITY.md).
 
 ## Limitations and roadmap
 
-- No audits yet: only the rule catalog.
-- Windows PowerShell 5.1 is not supported.
+- The inventory reads the computer it runs on; other computers come with the "At scale" step.
+- `Get-WinOpsAuditUpdate` lists what `Win32_QuickFixEngineering` knows: updates of Windows itself,
+  not of other products such as Office, nor Defender's definitions.
+- `Get-WinOpsAuditSoftware` does not list Store apps, nor programs installed only for users who
+  are not logged on (their part of the registry is not loaded).
+- 64-bit Windows only (Windows 11 and every Windows Server since 2008 R2 are). Windows PowerShell
+  5.1 is not supported.
 - The Active Directory rules read the directory over LDAP; they will not use Microsoft's
   `ActiveDirectory` module, which only exists on Windows.
 
 | Next | What |
 | --- | --- |
-| Inventory | Hardware, system, updates and installed software, through CIM |
 | Certificates | Local stores and remote servers: expiry, algorithm, chain |
 | Folder permissions | NTFS ACL audit |
 | Lab | A disposable Samba domain with planted problems, for the integration tests |

@@ -7,7 +7,7 @@ built; it grows with the module.
 
 ```mermaid
 flowchart LR
-    user([Administrator]) -->|Get-WinOpsAuditRule| public
+    user([Administrator]) -->|Get-WinOpsAudit*| public
     subgraph module [WinOpsAudit]
         manifest[WinOpsAudit.psd1<br/>version, exports] --> root[WinOpsAudit.psm1<br/>loads the files]
         root --> public[Public/<br/>one file per cmdlet]
@@ -23,9 +23,38 @@ flowchart LR
   later) and the cmdlets it exports. PowerShell reads it before loading anything.
 - **Public and private.** `Public/` holds the cmdlets people use, one per file; `Private/` holds
   helpers that are not exported and can change freely.
-- **Objects, not text.** Cmdlets return objects with a type name (`WinOpsAudit.Rule`), never
-  formatted text: the caller decides whether it becomes a table, a CSV or input for another script.
+- **Objects, not text.** Cmdlets return objects with a type name (`WinOpsAudit.Rule`,
+  `WinOpsAudit.Inventory`...), never formatted text: the caller decides whether it becomes a
+  table, a CSV or input for another script.
 - **Read-only.** No cmdlet changes anything ([ADR 0001](adr/0001-read-only-module.md)).
+- **Default views.** `WinOpsAudit.Format.ps1xml` says which columns the software and update objects
+  show in a table. It changes how they look, not what they hold.
+
+## The inventory
+
+```mermaid
+flowchart LR
+    inv[Get-WinOpsAuditInventory] --> cim
+    inv --> upd[Get-WinOpsAuditUpdate]
+    upd --> cim[Get-CimData<br/>the only Get-CimInstance]
+    sw[Get-WinOpsAuditSoftware] --> reg[Get-UninstallEntry<br/>the only registry read]
+    cim --> classes[(Win32_ComputerSystem, Win32_OperatingSystem,<br/>Win32_BIOS, Win32_Processor,<br/>Win32_QuickFixEngineering)]
+    reg --> keys[(Uninstall keys:<br/>64-bit, 32-bit, current user)]
+    sw --> filter[Test-InstalledProgram<br/>what Installed apps shows]
+    upd & sw --> dates[ConvertFrom-WindowsDate]
+```
+
+- **Two doors to Windows.** Everything that only exists on Windows goes through two private helpers:
+  `Get-CimData` (CIM) and `Get-UninstallEntry` (registry). The tests replace those two with prepared
+  data, so the rest of the logic (sums, filters, dates, errors) runs on Linux too. On Windows, more
+  tests run the cmdlets against the real system.
+- **Outside Windows** the cmdlets stop before reading anything, with the error id `WindowsOnly`.
+- **Errors that stop and errors that do not.** If the computer or its system cannot be read, the
+  inventory stops. If only the updates fail, the inventory is still returned, with an error and the
+  update summary empty. If one uninstall key cannot be read, the other two are still listed.
+- **Software from the registry**, never from `Win32_Product`
+  ([ADR 0002](adr/0002-software-from-the-registry.md)). The registry view (64 or 32 bits) is chosen
+  explicitly, so the result is the same from a 32-bit or a 64-bit PowerShell.
 
 ## The build
 
