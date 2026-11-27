@@ -197,15 +197,28 @@ Describe 'Get-WinOpsAuditTlsCertificate' {
         $servers = @{}
         # A server that sends its intermediate, as it should.
         $servers.Full = Start-TestTlsServer -Certificate $pki.Web -Chain $pki.Intermediate
-        # The same certificate without the intermediate: the classic mistake.
-        $servers.LeafOnly = Start-TestTlsServer -Certificate $pki.Web
         $servers.Expired = Start-TestTlsServer -Certificate $pki.Old -Chain $pki.Intermediate
+
+        # A server that does not send its intermediate: the classic mistake. On Windows the TLS
+        # of the system (Schannel) builds the chain a server sends from the certificate stores of
+        # the computer, so a server can send an intermediate it was not given if it has seen it
+        # before: the CI caught exactly that. So each of these servers gets an intermediate that
+        # no other server in these tests uses.
+        $webCa = New-TestCertificate -Subject 'CN=Contoso Test Web CA, O=Contoso Test' -Issuer $pki.Root -CertificateAuthority -NotBefore '2025-01-01' -NotAfter '2031-01-01'
+        $web02 = New-TestCertificate -Issuer $webCa -Subject 'CN=web02.contoso.test' -NotBefore '2026-01-01' -NotAfter '2027-06-30 18:00'
+        $servers.LeafOnly = Start-TestTlsServer -Certificate $web02
+        # The same mistake, in a PKI this computer is never told about.
+        $otherRoot = New-TestCertificate -Subject 'CN=Fabrikam Test Root CA, O=Fabrikam Test' -CertificateAuthority -NotBefore '2025-01-01' -NotAfter '2036-01-01'
+        $otherCa = New-TestCertificate -Subject 'CN=Fabrikam Test Issuing CA, O=Fabrikam Test' -Issuer $otherRoot -CertificateAuthority -NotBefore '2025-01-01' -NotAfter '2031-01-01'
+        $app = New-TestCertificate -Issuer $otherCa -Subject 'CN=app.fabrikam.test' -NotBefore '2026-01-01' -NotAfter '2027-06-30 18:00'
+        $servers.Unknown = Start-TestTlsServer -Certificate $app
+
         $selfSigned = New-TestCertificate -Subject 'CN=selfsigned.contoso.test' -NotBefore '2026-01-01' -NotAfter '2027-06-30 18:00'
         $servers.SelfSigned = Start-TestTlsServer -Certificate $selfSigned
         # Accepts the connection and never answers.
         $servers.Silent = Start-TestTlsServer -Certificate $pki.Web -Silent
         # The private PKI, as an administrator would pass it.
-        $pki.Authority = $pki.Root, $pki.Intermediate
+        $pki.Authority = $pki.Root, $pki.Intermediate, $webCa
     }
 
     AfterAll {
@@ -245,16 +258,17 @@ Describe 'Get-WinOpsAuditTlsCertificate' {
         $result = Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $servers.LeafOnly.Port -CertificateAuthority $pki.Authority
         $result.SentCount | Should -Be 0
         $result.ChainStatus | Should -Be 'MissingIntermediate'
-        $result.MissingCertificate | Should -Be 'CN=Contoso Test Issuing CA, O=Contoso Test'
+        $result.MissingCertificate | Should -Be 'CN=Contoso Test Web CA, O=Contoso Test'
         $result.Findings | Should -Be 'CRT-003'
     }
 
     It 'does not claim a missing intermediate when the issuer is unknown here (CRT-003)' {
-        # Without -CertificateAuthority this computer does not know the private root: it cannot
-        # tell who lacks the certificate, so it says so and reports no finding.
-        $result = Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $servers.LeafOnly.Port
+        # This computer is not told about that PKI: it cannot tell who lacks the certificate, so
+        # it says so and reports no finding.
+        $result = Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $servers.Unknown.Port
+        $result.SentCount | Should -Be 0
         $result.ChainStatus | Should -Be 'UnknownIssuer'
-        $result.MissingCertificate | Should -Be 'CN=Contoso Test Issuing CA, O=Contoso Test'
+        $result.MissingCertificate | Should -Be 'CN=Fabrikam Test Issuing CA, O=Fabrikam Test'
         $result.Findings | Should -BeNullOrEmpty
     }
 
