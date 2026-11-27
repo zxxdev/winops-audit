@@ -177,6 +177,7 @@ Describe 'Get-WinOpsAuditCertificate' {
         $output = Get-WinOpsAuditCertificate -ErrorAction Continue 2>&1
         $problems = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
         $certificates = @($output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] })
+        $problems | ForEach-Object { Write-Host "PROBLEM: $_" }
         $certificates.Count | Should -Be 6
         $certificates.Subject | Should -Not -Contain 'CN=mail.contoso.test'
         $problems.Count | Should -Be 1
