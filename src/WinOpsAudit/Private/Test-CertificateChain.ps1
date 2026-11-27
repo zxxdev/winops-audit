@@ -46,12 +46,14 @@ function Test-CertificateChain {
         # revocation is not checked.
         $policy.RevocationMode = [System.Security.Cryptography.X509Certificates.X509RevocationMode]::NoCheck
         $policy.UrlRetrievalTimeout = [timespan]::FromSeconds($TimeoutSeconds)
-        foreach ($certificate in $Sent) {
-            [void]$policy.ExtraStore.Add($certificate)
+        # Not "$certificate" as the loop variable: PowerShell does not tell it from $Certificate,
+        # and the loop would replace the certificate being checked.
+        foreach ($helper in $Sent) {
+            [void]$policy.ExtraStore.Add($helper)
         }
         $roots = @($CertificateAuthority | Where-Object { Test-SelfIssued -Certificate $_ })
-        foreach ($certificate in $CertificateAuthority | Where-Object { -not (Test-SelfIssued -Certificate $_) }) {
-            [void]$policy.ExtraStore.Add($certificate)
+        foreach ($helper in $CertificateAuthority | Where-Object { -not (Test-SelfIssued -Certificate $_) }) {
+            [void]$policy.ExtraStore.Add($helper)
         }
         if ($roots.Count -gt 0) {
             $policy.TrustMode = [System.Security.Cryptography.X509Certificates.X509ChainTrustMode]::CustomRootTrust

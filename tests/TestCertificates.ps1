@@ -143,8 +143,9 @@ function Start-TestTlsServer {
     [void]$shell.AddScript({
             param($Listener, $Certificate, $Chain)
             $extra = [System.Security.Cryptography.X509Certificates.X509Certificate2Collection]::new()
-            foreach ($certificate in $Chain) {
-                [void]$extra.Add($certificate)
+            # Not "$certificate": PowerShell would take it for $Certificate and replace it.
+            foreach ($item in $Chain) {
+                [void]$extra.Add($item)
             }
             # offline: build the chain from what is given, without looking anything up.
             $context = [System.Net.Security.SslStreamCertificateContext]::Create($Certificate, $extra, $true)
