@@ -27,8 +27,8 @@ flowchart LR
   `WinOpsAudit.Inventory`...), never formatted text: the caller decides whether it becomes a
   table, a CSV or input for another script.
 - **Read-only.** No cmdlet changes anything ([ADR 0001](adr/0001-read-only-module.md)).
-- **Default views.** `WinOpsAudit.Format.ps1xml` says which columns the software and update objects
-  show in a table. It changes how they look, not what they hold.
+- **Default views.** `WinOpsAudit.Format.ps1xml` says which columns the software, update and
+  certificate objects show in a table. It changes how they look, not what they hold.
 
 ## The inventory
 
@@ -55,6 +55,32 @@ flowchart LR
 - **Software from the registry**, never from `Win32_Product`
   ([ADR 0002](adr/0002-software-from-the-registry.md)). The registry view (64 or 32 bits) is chosen
   explicitly, so the result is the same from a 32-bit or a 64-bit PowerShell.
+
+## The certificates
+
+```mermaid
+flowchart LR
+    crt[Get-WinOpsAuditCertificate] --> store[Get-StoreCertificate<br/>the only store read]
+    tls[Get-WinOpsAuditTlsCertificate] --> hs[Get-TlsCertificateData<br/>the only network connection]
+    store --> stores[(LocalMachine / CurrentUser<br/>My, WebHosting, Root...)]
+    hs --> server([TLS server])
+    crt & tls --> audit[Get-CertificateAudit<br/>CRT-001 expiry, CRT-002 algorithm and key]
+    tls --> chain[Test-CertificateChain<br/>CRT-003 what the server did not send]
+    audit --> clock[Get-CurrentTime]
+```
+
+- **One check, two sources.** `Get-CertificateAudit` describes a certificate and applies CRT-001 and
+  CRT-002, whether it comes from a store or from a server. Its clock is `Get-CurrentTime`, so the
+  tests set the date instead of depending on the day they run.
+- **The stores are opened read-only**, and only if they exist. Like the inventory, the store cmdlet
+  only runs on Windows; the tests replace `Get-StoreCertificate` with certificates they make.
+- **The TLS cmdlet runs anywhere.** It does the handshake and closes the connection, accepting any
+  certificate: an expired one is what the audit wants to see. It is not mocked in the tests: they
+  start real TLS servers on 127.0.0.1, with certificates made in the test, on Linux and Windows.
+- **The chain is judged by what the server sends**
+  ([ADR 0003](adr/0003-chain-judged-by-what-the-server-sends.md)): the chain this computer would
+  build is compared with the certificates the server sent, and every intermediate that came from
+  this computer is reported as missing.
 
 ## The build
 
