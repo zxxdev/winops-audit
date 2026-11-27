@@ -171,18 +171,21 @@ Describe 'Get-WinOpsAuditCertificate' {
     }
 
     It 'goes on with the other certificates when one cannot be checked, and says which' {
-        Mock -ModuleName WinOpsAudit Get-CertificateAudit -ParameterFilter { $Certificate.Subject -eq 'CN=mail.contoso.test' } {
+        # The failure is made one level down, in a helper the check calls: Pester does not fall
+        # back to the real command when a filtered mock does not match, so the default mock
+        # does what the real Test-SelfIssued does, and the filtered one fails for one certificate.
+        Mock -ModuleName WinOpsAudit Test-SelfIssued { $Certificate.SubjectName.Name -ceq $Certificate.IssuerName.Name }
+        Mock -ModuleName WinOpsAudit Test-SelfIssued -ParameterFilter { $Certificate.Subject -eq 'CN=legacy.contoso.test' } {
             throw 'Unreadable extension'
         }
         $output = Get-WinOpsAuditCertificate -ErrorAction Continue 2>&1
         $problems = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
         $certificates = @($output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] })
-        $problems | ForEach-Object { Write-Host "PROBLEM: $_" }
         $certificates.Count | Should -Be 6
-        $certificates.Subject | Should -Not -Contain 'CN=mail.contoso.test'
+        $certificates.Subject | Should -Not -Contain 'CN=legacy.contoso.test'
         $problems.Count | Should -Be 1
         $problems[0].CategoryInfo.Category | Should -Be 'ReadError'
-        $problems[0].TargetObject | Should -Be $pki.Mail.Thumbprint
+        $problems[0].TargetObject | Should -Be $pki.Legacy.Thumbprint
     }
 
     It 'rejects a store it does not know before reading anything' {
