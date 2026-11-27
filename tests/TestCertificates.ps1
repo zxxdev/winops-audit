@@ -2,6 +2,31 @@
 # in memory (a root, an intermediate and the certificates they sign) and run a small TLS server
 # on 127.0.0.1, so the tests need no network and no files. Every name is made up (contoso.test).
 
+# Signs a certificate with SHA-1 and RSA, which .NET no longer does on its own: the tests need
+# such a certificate to check that CRT-002 finds it.
+class Sha1RsaSigner : System.Security.Cryptography.X509Certificates.X509SignatureGenerator {
+    hidden [System.Security.Cryptography.RSA] $Key
+
+    Sha1RsaSigner([System.Security.Cryptography.RSA] $key) {
+        $this.Key = $key
+    }
+
+    # sha1WithRSAEncryption (1.2.840.113549.1.1.5) with NULL parameters, encoded in DER.
+    [byte[]] GetSignatureAlgorithmIdentifier([System.Security.Cryptography.HashAlgorithmName] $hashAlgorithm) {
+        return [byte[]](0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x05, 0x05, 0x00)
+    }
+
+    [byte[]] SignData([byte[]] $data, [System.Security.Cryptography.HashAlgorithmName] $hashAlgorithm) {
+        return $this.Key.SignData($data, [System.Security.Cryptography.HashAlgorithmName]::SHA1,
+            [System.Security.Cryptography.RSASignaturePadding]::Pkcs1)
+    }
+
+    [System.Security.Cryptography.X509Certificates.PublicKey] BuildPublicKey() {
+        return [System.Security.Cryptography.X509Certificates.X509SignatureGenerator]::CreateForRSA(
+            $this.Key, [System.Security.Cryptography.RSASignaturePadding]::Pkcs1).PublicKey
+    }
+}
+
 function New-TestCertificate {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '',
         Justification = 'Makes an object in memory; changes nothing on the system.')]
@@ -33,15 +58,17 @@ function New-TestCertificate {
         [string[]] $DnsName
     )
 
-    $hashName = [System.Security.Cryptography.HashAlgorithmName]::new($Hash)
+    # The request always says SHA-256: .NET refuses to sign with SHA-1. A SHA-1 certificate is
+    # signed by Sha1RsaSigner instead.
+    $sha256 = [System.Security.Cryptography.HashAlgorithmName]::SHA256
     if ($KeyAlgorithm -eq 'RSA') {
         $key = [System.Security.Cryptography.RSA]::Create($KeySize)
         $request = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
-            $Subject, $key, $hashName, [System.Security.Cryptography.RSASignaturePadding]::Pkcs1)
+            $Subject, $key, $sha256, [System.Security.Cryptography.RSASignaturePadding]::Pkcs1)
     } else {
         $curve = [System.Security.Cryptography.ECCurve+NamedCurves]::nistP256
         $key = [System.Security.Cryptography.ECDsa]::Create($curve)
-        $request = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new($Subject, $key, $hashName)
+        $request = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new($Subject, $key, $sha256)
     }
 
     $extensions = $request.CertificateExtensions
@@ -59,13 +86,20 @@ function New-TestCertificate {
         $extensions.Add($san.Build())
     }
 
-    if (-not $Issuer) {
+    if (-not $Issuer -and $Hash -eq 'SHA256') {
         return $request.CreateSelfSigned($NotBefore, $NotAfter)
     }
     $serial = [byte[]]::new(16)
     [System.Security.Cryptography.RandomNumberGenerator]::Fill($serial)
     $serial[0] = $serial[0] -band 0x7F
-    $certificate = $request.Create($Issuer, $NotBefore, $NotAfter, $serial)
+    if ($Hash -eq 'SHA1') {
+        # Signed with the key of the issuer, or with its own when it is self-signed.
+        $signingKey = if ($Issuer) { $Issuer.GetRSAPrivateKey() } else { $key }
+        $issuerName = if ($Issuer) { $Issuer.SubjectName } else { $request.SubjectName }
+        $certificate = $request.Create($issuerName, [Sha1RsaSigner]::new($signingKey), $NotBefore, $NotAfter, $serial)
+    } else {
+        $certificate = $request.Create($Issuer, $NotBefore, $NotAfter, $serial)
+    }
     if ($key -is [System.Security.Cryptography.RSA]) {
         [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($certificate, $key)
     } else {
