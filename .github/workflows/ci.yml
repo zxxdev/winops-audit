@@ -61,7 +61,7 @@ jobs:
           "Trusted roots that have expired or expire within 365 days: $($roots.Count)"
           $roots | Group-Object -Property Status -NoElement | Format-Table Name, Count -AutoSize | Out-String | Write-Output
           $roots | Where-Object Status -EQ 'Expiring' |
-            Format-Table Subject, NotAfter, DaysLeft, Findings -AutoSize | Out-String -Width 200 | Write-Output
+            Format-Table NotAfter, DaysLeft, Findings, Subject -AutoSize | Out-String -Width 200 | Write-Output
           'github.com', 'incomplete-chain.badssl.com', 'expired.badssl.com' |
             Get-WinOpsAuditTlsCertificate -ErrorAction Continue |
             Format-Table ComputerName, DaysLeft, Status, SentCount, ChainStatus, MissingCertificate, Findings -AutoSize |

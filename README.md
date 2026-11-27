@@ -18,8 +18,8 @@ flowchart LR
 [![CI](https://github.com/zxxdev/winops-audit/actions/workflows/ci.yml/badge.svg)](https://github.com/zxxdev/winops-audit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> **Status: early.** The first area, the inventory, works; the other audits come one area at a
-> time (see the [roadmap](#limitations-and-roadmap)).
+> **Status: early.** The first two areas, the inventory and the certificates, work; the other
+> audits come one area at a time (see the [roadmap](#limitations-and-roadmap)).
 
 ## Contents
 
@@ -45,13 +45,16 @@ with read-only accounts.
 
 ## What it does
 
-Today: the inventory of the computer it runs on, and the catalog of audit rules.
+Today: the inventory of the computer it runs on, its certificates and those of TLS servers, and
+the catalog of audit rules.
 
 | Cmdlet | Returns |
 | --- | --- |
 | `Get-WinOpsAuditInventory` | One object for the computer: hardware, operating system, domain, how many updates and the date of the last one |
 | `Get-WinOpsAuditUpdate` | One object per installed update |
 | `Get-WinOpsAuditSoftware` | One object per installed program, read from the registry (never from `Win32_Product`) |
+| `Get-WinOpsAuditCertificate` | One object per certificate in the local stores: days left, algorithm, key and the rules it breaks |
+| `Get-WinOpsAuditTlsCertificate` | One object per TLS server: the certificate it presents, and whether it sends the intermediates it should |
 | `Get-WinOpsAuditRule` | The audit rules, available and planned |
 
 This is real output, from the Windows Server 2025 runner of this repository's
@@ -107,6 +110,40 @@ exported as they are:
 Get-WinOpsAuditSoftware | Where-Object Architecture -eq 'x86' | Export-Csv .\software-x86.csv
 ```
 
+The certificates, from the same runner on 2026-11-27 (the step "Show the certificates this runner
+sees"). First the local stores: `-ExpiringInDays` lists what expires within that many days, the
+expired ones included. The runner's trusted roots are a good example of how much nobody looks at:
+
+```powershell
+Get-WinOpsAuditCertificate -StoreName Root -ExpiringInDays 365 | Group-Object -Property Status -NoElement
+```
+
+```text
+Name     Count
+----     -----
+Expired    102
+Expiring    17
+```
+
+Then TLS servers, which works from any system. [badssl.com](https://badssl.com) keeps test servers
+that are broken on purpose; `incomplete-chain.badssl.com` does not send its intermediate. Many
+computers connect to it anyway, because they find the intermediate themselves; clients that do not
+look for it fail. That is rule CRT-003, and why it is judged by what the server sends
+([ADR 0003](docs/adr/0003-chain-judged-by-what-the-server-sends.md)):
+
+```powershell
+'github.com', 'incomplete-chain.badssl.com', 'expired.badssl.com' | Get-WinOpsAuditTlsCertificate |
+    Format-Table ComputerName, DaysLeft, Status, SentCount, ChainStatus, MissingCertificate, Findings
+```
+
+```text
+ComputerName                DaysLeft Status   SentCount ChainStatus         MissingCertificate                                      Findings
+------------                -------- ------   --------- -----------         ------------------                                      --------
+github.com                        61 Valid            2 Complete
+incomplete-chain.badssl.com       30 Expiring         0 MissingIntermediate CN=YR1, O=Let's Encrypt, C=US; CN=Root YR, O=ISRG, C=US CRT-001; CRT-003
+expired.badssl.com             -4246 Expired          2 Complete                                                                    CRT-001
+```
+
 And the rule catalog:
 
 ```powershell
@@ -114,11 +151,11 @@ Get-WinOpsAuditRule -Area Certificates | Format-Table Id, Severity, Status, Titl
 ```
 
 ```text
-Id      Severity Status  Title
---      -------- ------  -----
-CRT-001 High     Planned Certificate expires within the warning window
-CRT-002 Medium   Planned Weak signature algorithm or key size
-CRT-003 Medium   Planned Server does not send its full chain
+Id      Severity Status    Title
+--      -------- ------    -----
+CRT-001 High     Available Certificate expires within the warning window
+CRT-002 Medium   Available Weak signature algorithm or key size
+CRT-003 Medium   Available Server does not send its full chain
 ```
 
 The catalog covers four areas. Each rule becomes `Available` when its cmdlet, its tests (a case it
@@ -143,7 +180,9 @@ git clone https://github.com/zxxdev/winops-audit.git
 cd winops-audit
 Import-Module ./src/WinOpsAudit/WinOpsAudit.psd1
 Get-WinOpsAuditRule
-Get-WinOpsAuditInventory   # Windows only: reads CIM and the registry
+Get-WinOpsAuditTlsCertificate -ComputerName github.com   # any system
+Get-WinOpsAuditInventory                                 # Windows only: reads CIM and the registry
+Get-WinOpsAuditCertificate -ExpiringInDays 30            # Windows only: reads the certificate stores
 ```
 
 The module is not on the PowerShell Gallery yet: that is the 1.0 release.
@@ -160,10 +199,11 @@ flowchart LR
 ```
 
 A standard script module: the manifest says what it exports and what it needs, the cmdlets live
-one per file in `Public/`, and helpers that may change freely live in `Private/`. Only two private
-helpers touch Windows, one for CIM and one for the registry, so the tests can replace them. The
-help is written in Markdown and built into the file `Get-Help` reads, and a format file gives the
-objects their default tables. More in [docs/architecture.md](docs/architecture.md).
+one per file in `Public/`, and helpers that may change freely live in `Private/`. Each outside
+source has one private helper and only one: CIM, the registry, the certificate stores, and the TLS
+connection, so the tests can replace them or, for TLS, point them at a test server. The help is
+written in Markdown and built into the file `Get-Help` reads, and a format file gives the objects
+their default tables. More in [docs/architecture.md](docs/architecture.md).
 
 ## Technical decisions
 
@@ -171,6 +211,7 @@ objects their default tables. More in [docs/architecture.md](docs/architecture.m
 | --- | --- |
 | [Read-only](docs/adr/0001-read-only-module.md) | Can run with read-only accounts, with no change window; a person decides what to fix. |
 | [Installed software from the registry](docs/adr/0002-software-from-the-registry.md) | `Win32_Product` is slow and makes Windows check, and sometimes repair, every MSI installation. |
+| [Certificate chain judged by what the server sends](docs/adr/0003-chain-judged-by-what-the-server-sends.md) | A computer that already has the intermediate connects anyway; asking it whether the chain is valid would hide the problem. |
 | Objects out, formatting last | Results can be filtered, exported and compared; the tables come from a format file, not from the cmdlets. |
 | PowerShell 7 only | Runs on Windows and Linux, so the logic is tested on both; Windows PowerShell 5.1 no longer evolves. |
 | Help written in Markdown | Reviewed like any other change; [PlatyPS](https://github.com/PowerShell/platyPS) builds it into the help file. |
@@ -185,6 +226,11 @@ Every pull request runs `./build.ps1` on **Linux and Windows**:
   with prepared data, so the logic is tested on Linux too. On Windows, more tests run the cmdlets
   against the real system, and the updates are compared with `Get-HotFix`. That test caught a bug
   the mocks could not: on Windows, PowerShell hands over the update dates already converted.
+- **Certificates made in the test.** Every certificate the tests use is created by the tests, with
+  fixed dates and a fixed clock, so "13 days left" holds whatever day they run. The TLS cmdlet is
+  not mocked: the tests start real TLS servers on 127.0.0.1 (one sends its intermediate, one does
+  not, one has expired, one never answers) on Linux and Windows. On Windows, a test also adds a
+  certificate to the current user's store, finds it, and removes it.
 - Tests that guard the design: the manifest exports exactly the public cmdlets, every exported
   cmdlet uses a read-only verb, and every cmdlet has a synopsis, a description, an example and a
   description for each parameter.
@@ -226,6 +272,11 @@ Report vulnerabilities privately: see [SECURITY.md](SECURITY.md).
   not of other products such as Office, nor Defender's definitions.
 - `Get-WinOpsAuditSoftware` does not list Store apps, nor programs installed only for users who
   are not logged on (their part of the registry is not loaded).
+- The certificate cmdlets do not check revocation, whether the names in a certificate match the
+  service, or which TLS versions and ciphers a server accepts. `Get-WinOpsAuditTlsCertificate`
+  only speaks TLS from the first byte: services that switch to TLS later (SMTP with STARTTLS) are
+  not supported. When a chain does not reach a root this computer knows, it says `UnknownIssuer`
+  instead of guessing; `-CertificateAuthority` takes the certificates of a private PKI.
 - 64-bit Windows only (Windows 11 and every Windows Server since 2008 R2 are). Windows PowerShell
   5.1 is not supported.
 - The Active Directory rules read the directory over LDAP; they will not use Microsoft's
@@ -233,7 +284,6 @@ Report vulnerabilities privately: see [SECURITY.md](SECURITY.md).
 
 | Next | What |
 | --- | --- |
-| Certificates | Local stores and remote servers: expiry, algorithm, chain |
 | Folder permissions | NTFS ACL audit |
 | Lab | A disposable Samba domain with planted problems, for the integration tests |
 | Active Directory | Accounts, groups and delegation |
