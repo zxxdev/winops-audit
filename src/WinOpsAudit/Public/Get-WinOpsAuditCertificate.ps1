@@ -36,7 +36,14 @@ function Get-WinOpsAuditCertificate {
         }
 
         $rows = foreach ($certificate in $certificates) {
-            $audit = Get-CertificateAudit -Certificate $certificate -WarningDays $warningDays -Now $now
+            try {
+                $audit = Get-CertificateAudit -Certificate $certificate -WarningDays $warningDays -Now $now -ErrorAction Stop
+            } catch {
+                # One certificate that cannot be read does not hide the others in the store.
+                $message = "Could not audit the certificate $($certificate.Thumbprint) in ${store}: $($_.Exception.Message)"
+                Write-Error -Message $message -Category ReadError -TargetObject $certificate.Thumbprint
+                continue
+            }
             if ($onlyExpiring -and $audit.Status -notin 'Expired', 'Expiring') {
                 continue
             }

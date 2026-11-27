@@ -49,15 +49,24 @@ function Get-CertificateAudit {
         default { if ($publicKey.Oid.FriendlyName) { $publicKey.Oid.FriendlyName } else { $publicKey.Oid.Value } }
     }
     $keySize = $null
+    $key = $null
     try {
-        $keySize = switch ($keyAlgorithm) {
-            'RSA' { $publicKey.GetRSAPublicKey().KeySize }
-            'EC' { $publicKey.GetECDsaPublicKey().KeySize }
-            'DSA' { $publicKey.GetDSAPublicKey().KeySize }
+        $key = switch ($keyAlgorithm) {
+            'RSA' { $publicKey.GetRSAPublicKey() }
+            'EC' { $publicKey.GetECDsaPublicKey() }
+            'DSA' { $publicKey.GetDSAPublicKey() }
+        }
+        if ($key) {
+            $keySize = $key.KeySize
         }
     } catch {
         # A key this system cannot read: its size stays unknown rather than guessed.
         Write-Verbose "Could not read the key of $($Certificate.Subject): $($_.Exception.Message)"
+    } finally {
+        # Each call gives a new key object, which holds a handle of the system until disposed.
+        if ($key) {
+            $key.Dispose()
+        }
     }
 
     $weak = [System.Collections.Generic.List[string]]::new()
@@ -65,7 +74,10 @@ function Get-CertificateAudit {
     if ($weakSignatures.ContainsKey($signature) -and -not (Test-SelfIssued -Certificate $Certificate)) {
         $weak.Add("signed with $($weakSignatures[$signature])")
     }
-    if ($keyAlgorithm -eq 'RSA' -and $keySize -lt 2048) {
+    # An unknown size is not a short one: in PowerShell $null -lt 2048 would be true.
+    if ($null -eq $keySize -and $keyAlgorithm -ne 'DSA') {
+        Write-Verbose "The key size of $($Certificate.Subject) is unknown: not checked."
+    } elseif ($keyAlgorithm -eq 'RSA' -and $keySize -lt 2048) {
         $weak.Add("RSA key of $keySize bits, under 2048")
     } elseif ($keyAlgorithm -eq 'EC' -and $keySize -lt 256) {
         $weak.Add("EC key of $keySize bits, under 256")

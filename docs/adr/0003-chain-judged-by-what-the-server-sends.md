@@ -48,3 +48,6 @@ computer that does not trust it.
 - Building the chain may download intermediates from the addresses in the certificates, as
   browsers do. Revocation is not checked, so no revocation lists are downloaded.
 - `UnknownIssuer` is a gap, said out loud: the audit does not guess.
+- `Complete` says nothing about trust: a chain that ends in a self-signed root this computer does
+  not trust, or a self-signed server certificate, is complete for this rule. Trust is a separate
+  question, not checked here.

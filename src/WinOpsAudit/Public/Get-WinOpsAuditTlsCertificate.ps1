@@ -45,11 +45,18 @@ function Get-WinOpsAuditTlsCertificate {
                 continue
             }
 
-            $audit = Get-CertificateAudit -Certificate $tls.Certificate -WarningDays $warningDays -Now (Get-CurrentTime)
-            if ($onlyExpiring -and $audit.Status -notin 'Expired', 'Expiring') {
+            try {
+                $audit = Get-CertificateAudit -Certificate $tls.Certificate -WarningDays $warningDays -Now (Get-CurrentTime) -ErrorAction Stop
+                if ($onlyExpiring -and $audit.Status -notin 'Expired', 'Expiring') {
+                    continue
+                }
+                $chain = Test-CertificateChain -Certificate $tls.Certificate -Sent $tls.Sent -CertificateAuthority $CertificateAuthority -TimeoutSeconds $TimeoutSeconds -ErrorAction Stop
+            } catch {
+                # A certificate that cannot be checked does not stop the other servers.
+                $message = "Could not audit the certificate of ${target}: $($_.Exception.Message)"
+                Write-Error -Message $message -Category ReadError -TargetObject $target
                 continue
             }
-            $chain = Test-CertificateChain -Certificate $tls.Certificate -Sent $tls.Sent -CertificateAuthority $CertificateAuthority -TimeoutSeconds $TimeoutSeconds
             $findings = @($audit.Findings) + @(if ($chain.Status -eq 'MissingIntermediate') { 'CRT-003' })
 
             [pscustomobject]@{

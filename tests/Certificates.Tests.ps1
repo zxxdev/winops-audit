@@ -170,6 +170,20 @@ Describe 'Get-WinOpsAuditCertificate' {
         $problems[0].TargetObject | Should -Be 'LocalMachine\WebHosting'
     }
 
+    It 'goes on with the other certificates when one cannot be checked, and says which' {
+        Mock -ModuleName WinOpsAudit Get-CertificateAudit -ParameterFilter { $Certificate.Subject -eq 'CN=mail.contoso.test' } {
+            throw 'Unreadable extension'
+        }
+        $output = Get-WinOpsAuditCertificate -ErrorAction Continue 2>&1
+        $problems = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
+        $certificates = @($output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] })
+        $certificates.Count | Should -Be 6
+        $certificates.Subject | Should -Not -Contain 'CN=mail.contoso.test'
+        $problems.Count | Should -Be 1
+        $problems[0].CategoryInfo.Category | Should -Be 'ReadError'
+        $problems[0].TargetObject | Should -Be $pki.Mail.Thumbprint
+    }
+
     It 'rejects a store it does not know before reading anything' {
         { Get-WinOpsAuditCertificate -StoreName 'Printers' } |
             Should -Throw -ErrorId 'ParameterArgumentValidationError,Get-WinOpsAuditCertificate'
@@ -305,6 +319,16 @@ Describe 'Get-WinOpsAuditTlsCertificate' {
         $problems.Count | Should -Be 1
         $problems[0].CategoryInfo.Category | Should -Be 'ConnectionError'
         $problems[0].TargetObject | Should -Be "127.0.0.2:$($servers.Full.Port)"
+    }
+
+    It 'goes on with the other servers when a certificate cannot be checked' {
+        Mock -ModuleName WinOpsAudit Test-CertificateChain { throw 'Chain engine failure' }
+        $output = '127.0.0.1', '127.0.0.1' |
+            Get-WinOpsAuditTlsCertificate -Port $servers.Full.Port -CertificateAuthority $pki.Authority -ErrorAction Continue 2>&1
+        $problems = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
+        $problems.Count | Should -Be 2 -Because 'the first failure must not stop the second server'
+        $problems[0].CategoryInfo.Category | Should -Be 'ReadError'
+        $problems[0].TargetObject | Should -Be "127.0.0.1:$($servers.Full.Port)"
     }
 
     It 'gives up on a server that accepts the connection and never answers' {
