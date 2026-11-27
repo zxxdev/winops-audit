@@ -92,14 +92,16 @@ function New-TestCertificate {
     $serial = [byte[]]::new(16)
     [System.Security.Cryptography.RandomNumberGenerator]::Fill($serial)
     $serial[0] = $serial[0] -band 0x7F
-    if ($Hash -eq 'SHA1') {
-        # Signed with the key of the issuer, or with its own when it is self-signed.
-        $signingKey = if ($Issuer) { [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($Issuer) } else { $key }
-        $issuerName = if ($Issuer) { $Issuer.SubjectName } else { $request.SubjectName }
-        $certificate = $request.Create($issuerName, [Sha1RsaSigner]::new($signingKey), $NotBefore, $NotAfter, $serial)
+    # Signed with the key of the issuer (always RSA here), or with its own when it is self-signed.
+    $signingKey = if ($Issuer) { [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($Issuer) } else { $key }
+    $issuerName = if ($Issuer) { $Issuer.SubjectName } else { $request.SubjectName }
+    $signer = if ($Hash -eq 'SHA1') {
+        [Sha1RsaSigner]::new($signingKey)
     } else {
-        $certificate = $request.Create($Issuer, $NotBefore, $NotAfter, $serial)
+        [System.Security.Cryptography.X509Certificates.X509SignatureGenerator]::CreateForRSA(
+            $signingKey, [System.Security.Cryptography.RSASignaturePadding]::Pkcs1)
     }
+    $certificate = $request.Create($issuerName, $signer, $NotBefore, $NotAfter, $serial)
     if ($key -is [System.Security.Cryptography.RSA]) {
         [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($certificate, $key)
     } else {
