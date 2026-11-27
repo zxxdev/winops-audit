@@ -48,3 +48,21 @@ jobs:
           Get-WinOpsAuditInventory | Format-List | Out-String -Width 120 | Write-Output
           Get-WinOpsAuditUpdate | Out-String -Width 120 | Write-Output
           Get-WinOpsAuditSoftware -Name '*PowerShell*', 'Git*', '*Python*' | Out-String -Width 120 | Write-Output
+
+      # The certificates, from the same runner: the trusted roots that expire within a year, and
+      # what a few public servers send. badssl.com keeps test servers that are broken on purpose,
+      # such as one that does not send its intermediate. A server that does not answer only
+      # writes an error; it does not fail the job.
+      - name: Show the certificates this runner sees
+        if: ${{ !cancelled() && runner.os == 'Windows' }}
+        run: |
+          Import-Module ./src/WinOpsAudit/WinOpsAudit.psd1
+          $roots = @(Get-WinOpsAuditCertificate -StoreName Root -ExpiringInDays 365)
+          "Trusted roots that have expired or expire within 365 days: $($roots.Count)"
+          $roots | Group-Object -Property Status -NoElement | Format-Table Name, Count -AutoSize | Out-String | Write-Output
+          $roots | Where-Object Status -EQ 'Expiring' |
+            Format-Table NotAfter, DaysLeft, Findings, Subject -AutoSize | Out-String -Width 200 | Write-Output
+          'github.com', 'incomplete-chain.badssl.com', 'expired.badssl.com' |
+            Get-WinOpsAuditTlsCertificate -ErrorAction Continue |
+            Format-Table ComputerName, DaysLeft, Status, SentCount, ChainStatus, MissingCertificate, Findings -AutoSize |
+            Out-String -Width 200 | Write-Output

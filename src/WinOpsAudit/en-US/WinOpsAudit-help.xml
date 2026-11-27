@@ -2,6 +2,200 @@
 <helpItems xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" schema="maml" xmlns="http://msh">
   <command:command>
     <command:details>
+      <command:name>Get-WinOpsAuditCertificate</command:name>
+      <maml:description>
+        <maml:para>Lists the certificates in the certificate stores of this computer, with when they expire and what is wrong with them.</maml:para>
+      </maml:description>
+      <command:verb>Get</command:verb>
+      <command:noun>WinOpsAuditCertificate</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Returns one object per certificate in the stores asked for, LocalMachine\My unless told otherwise: the store it is in, its subject, issuer and DNS names, its validity dates, how many whole days it has left, its signature algorithm and key, and the audit rules it breaks.
+
+Two rules are checked:
+
+- CRT-001: the certificate has expired, or expires within the warning window. The window is the value of ExpiringInDays, or 30 days without it.
+- CRT-002: it is signed with MD2, MD4, MD5 or SHA-1, or its key is too short: RSA under 2048 bits, EC under 256, or DSA of any size. The signature of a self-signed certificate, such as a root, is not checked: nobody verifies it, because a root is trusted for being in the store. Its key is checked like any other.
+
+With ExpiringInDays, only the certificates that expire within that many days come out, the expired ones included. The certificates that expire first come first.
+
+The stores are opened read-only, and only if they exist. If one store cannot be opened, the certificates of the others are still returned and an error says which store failed.
+
+It only runs on Windows. Nothing is changed.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Get-WinOpsAuditCertificate</maml:name>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>StoreLocation</maml:name>
+          <maml:description />
+          <command:parameterValueGroup>
+            <command:parameterValue required="false" variableLength="false">LocalMachine</command:parameterValue>
+            <command:parameterValue required="false" variableLength="false">CurrentUser</command:parameterValue>
+          </command:parameterValueGroup>
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>StoreName</maml:name>
+          <maml:description />
+          <command:parameterValueGroup>
+            <command:parameterValue required="false" variableLength="false">My</command:parameterValue>
+            <command:parameterValue required="false" variableLength="false">WebHosting</command:parameterValue>
+            <command:parameterValue required="false" variableLength="false">Remote Desktop</command:parameterValue>
+            <command:parameterValue required="false" variableLength="false">Root</command:parameterValue>
+            <command:parameterValue required="false" variableLength="false">CA</command:parameterValue>
+            <command:parameterValue required="false" variableLength="false">TrustedPublisher</command:parameterValue>
+          </command:parameterValueGroup>
+          <command:parameterValue required="true" variableLength="false">string[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String[]</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>ExpiringInDays</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+          </dev:type>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>ExpiringInDays</maml:name>
+        <maml:description>
+          <maml:para>Lists only the certificates that expire within this many days, the expired ones included, and uses the same number of days as the warning window of rule CRT-001. A certificate with 13.9 days left counts as 13. Without this parameter every certificate is listed and the window is 30 days.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>StoreLocation</maml:name>
+        <maml:description>
+          <maml:para>Whose stores to read: LocalMachine, the stores of the computer, or CurrentUser, the stores of the user running the command.</maml:para>
+        </maml:description>
+        <command:parameterValueGroup>
+          <command:parameterValue required="false" variableLength="false">LocalMachine</command:parameterValue>
+          <command:parameterValue required="false" variableLength="false">CurrentUser</command:parameterValue>
+        </command:parameterValueGroup>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>StoreName</maml:name>
+        <maml:description>
+          <maml:para>One or more stores to read. My is the Personal store, where most service certificates are; WebHosting is where IIS can keep its own; Remote Desktop holds the certificate of RDP; Root and CA hold the trusted roots and the intermediate authorities; TrustedPublisher, the publishers trusted to sign code.</maml:para>
+        </maml:description>
+        <command:parameterValueGroup>
+          <command:parameterValue required="false" variableLength="false">My</command:parameterValue>
+          <command:parameterValue required="false" variableLength="false">WebHosting</command:parameterValue>
+          <command:parameterValue required="false" variableLength="false">Remote Desktop</command:parameterValue>
+          <command:parameterValue required="false" variableLength="false">Root</command:parameterValue>
+          <command:parameterValue required="false" variableLength="false">CA</command:parameterValue>
+          <command:parameterValue required="false" variableLength="false">TrustedPublisher</command:parameterValue>
+        </command:parameterValueGroup>
+        <command:parameterValue required="true" variableLength="true">System.String[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String[]</maml:name>
+        </dev:type>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>None</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>This cmdlet takes no input from the pipeline.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>WinOpsAudit.Certificate</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>One object per certificate, with the properties ComputerName, Store, Subject, Issuer, DnsNames, FriendlyName, Thumbprint, SerialNumber, NotBefore, NotAfter, DaysLeft, Status (Valid, Expiring, Expired or NotYetValid), SignatureAlgorithm, KeyAlgorithm (RSA, EC or DSA), KeySize, WeakReason, HasPrivateKey and Findings (the ids of the rules it breaks, separated by "; "). The default table shows Store, Subject, NotAfter, DaysLeft, Status and Findings.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para>It does not check whether a certificate has been revoked, whether its chain is trusted on this computer, or whether its names match the service that uses it. To see what a server sends to its clients, including the intermediate certificates (rule CRT-003), use Get-WinOpsAuditTlsCertificate. These are audit rules CRT-001 and CRT-002.</maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1: The certificates of the computer ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditCertificate
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>Lists the certificates in LocalMachine\My, where the certificates of the services of the computer (IIS, RDP, LDAPS, WinRM...) usually are.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 2: The certificates that expire within 30 days ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditCertificate -ExpiringInDays 30
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>The expired ones come out too, with a negative DaysLeft.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 3: Weak certificates in several stores ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditCertificate -StoreName My, WebHosting, 'Remote Desktop' | Where-Object Findings -match 'CRT-002' | Select-Object Store, Subject, WeakReason
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 4: The trusted roots of the current user that expire this year ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditCertificate -StoreLocation CurrentUser -StoreName Root -ExpiringInDays 365
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version</maml:linkText>
+        <maml:uri>https://github.com/zxxdev/winops-audit/blob/main/docs/commands/WinOpsAudit/Get-WinOpsAuditCertificate.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-WinOpsAuditTlsCertificate</maml:linkText>
+        <maml:uri>Get-WinOpsAuditTlsCertificate.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Project on GitHub</maml:linkText>
+        <maml:uri>https://github.com/zxxdev/winops-audit</maml:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
       <command:name>Get-WinOpsAuditInventory</command:name>
       <maml:description>
         <maml:para>Describes this computer: hardware, operating system, domain and installed updates.</maml:para>
@@ -343,6 +537,217 @@ Get-WinOpsAuditSoftware | Where-Object Architecture -eq 'x86' | Export-Csv -Path
       <maml:navigationLink>
         <maml:linkText>ADR 0002: installed software from the registry</maml:linkText>
         <maml:uri>https://github.com/zxxdev/winops-audit/blob/main/docs/adr/0002-software-from-the-registry.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Project on GitHub</maml:linkText>
+        <maml:uri>https://github.com/zxxdev/winops-audit</maml:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
+      <command:name>Get-WinOpsAuditTlsCertificate</command:name>
+      <maml:description>
+        <maml:para>Connects to TLS servers and audits the certificate each one presents, and the chain it sends with it.</maml:para>
+      </maml:description>
+      <command:verb>Get</command:verb>
+      <command:noun>WinOpsAuditTlsCertificate</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Opens a TLS connection to each server, reads the certificate it presents and the other certificates it sends, and closes the connection: nothing is sent after the handshake. Any certificate is accepted, because the point is to look at it, not to trust it.
+
+Returns one object per server with the same description as Get-WinOpsAuditCertificate (subject, dates, days left, algorithm, key) and rules CRT-001 and CRT-002, plus what the server sends:
+
+- CRT-003: the server does not send the intermediate certificates its chain needs. A client that has them from before (in its store, in its cache, or downloaded from the address written in the certificate) connects fine, and another one fails. So whether this computer can complete the chain proves nothing: the check builds the chain this computer would use, with everything it can find, and reports every intermediate in it that the server did not send. ChainStatus is Complete when the chain reaches a self-signed root and every intermediate in it was sent; MissingIntermediate when some were not; or UnknownIssuer when the chain does not reach a self-signed root at all, because an issuer is not known here: then it cannot tell who lacks the certificate, and no finding is reported. Whether this computer trusts the root is not part of this rule: a self-signed server certificate, or a private root it does not trust, can still be Complete.
+
+Building the chain can download intermediate certificates from the addresses written in the certificates, as browsers do. Revocation is not checked.
+
+A server that cannot be reached, or does not finish the handshake in time, writes an error that names it, and the command goes on with the others.
+
+It runs on any system PowerShell 7 runs on. Nothing is changed.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Get-WinOpsAuditTlsCertificate</maml:name>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="HostName, DnsName">
+          <maml:name>ComputerName</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String[]</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>Port</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>ExpiringInDays</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>TimeoutSeconds</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>CertificateAuthority</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">X509Certificate2[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Security.Cryptography.X509Certificates.X509Certificate2[]</maml:name>
+          </dev:type>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>CertificateAuthority</maml:name>
+        <maml:description>
+          <maml:para>Certificates of a private PKI, for servers whose chain this computer does not know. The self-signed ones are trusted as roots, instead of the roots of this computer; the others only help to build the chain. They are not treated as sent by the server: an intermediate found only here is still reported as missing.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.Security.Cryptography.X509Certificates.X509Certificate2[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Security.Cryptography.X509Certificates.X509Certificate2[]</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="0" aliases="HostName, DnsName">
+        <maml:name>ComputerName</maml:name>
+        <maml:description>
+          <maml:para>One or more servers, by name or IP address. The name is also sent in the handshake (SNI), so a server with several sites presents the certificate of that name. Takes names from the pipeline, as text or as a property named ComputerName, HostName or DnsName.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String[]</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>ExpiringInDays</maml:name>
+        <maml:description>
+          <maml:para>Lists only the servers whose certificate expires within this many days, the expired ones included, and uses the same number of days as the warning window of rule CRT-001. Without this parameter every server is listed and the window is 30 days.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Port</maml:name>
+        <maml:description>
+          <maml:para>The TCP port, the same for every server. 443 unless told otherwise.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>TimeoutSeconds</maml:name>
+        <maml:description>
+          <maml:para>How long to wait for each server to accept the connection, and then for each step of the handshake, before giving up on it. 10 seconds unless told otherwise.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+        </dev:type>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>The names of the servers, as text or as a property named ComputerName, HostName or DnsName.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>WinOpsAudit.TlsCertificate</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>One object per server, with the properties ComputerName, Port, Protocol (the TLS version agreed), Subject, Issuer, DnsNames, Thumbprint, SerialNumber, NotBefore, NotAfter, DaysLeft, Status, SignatureAlgorithm, KeyAlgorithm, KeySize, WeakReason, SentCount (how many certificates the server sent besides its own), ChainStatus, MissingCertificate (the subjects of the certificates the server should have sent, or the unknown issuer) and Findings. The default table shows ComputerName, Port, Subject, DaysLeft, Status, ChainStatus and Findings.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para>It does not check whether the names in the certificate match the server, whether the certificate has been revoked, or which TLS versions and ciphers the server accepts besides the one agreed. Why CRT-003 is judged from what the server sends, and not from whether this computer can build the chain, is explained in ADR 0003 of the project. These are audit rules CRT-001, CRT-002 and CRT-003.</maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1: The certificate of a web server ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditTlsCertificate -ComputerName www.contoso.test
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 2: Several servers, only the ones that expire within 30 days ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+'www.contoso.test', 'mail.contoso.test', 'vpn.contoso.test' | Get-WinOpsAuditTlsCertificate -ExpiringInDays 30
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 3: Other ports: LDAPS and RDP ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-WinOpsAuditTlsCertificate -ComputerName dc01.contoso.test -Port 636
+Get-WinOpsAuditTlsCertificate -ComputerName srv-file01.contoso.test -Port 3389
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>Any service that starts TLS as soon as it connects works. Services that start in plain text and switch to TLS later (SMTP with STARTTLS, for example) do not.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 4: Servers of a private PKI ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$pki = Get-ChildItem -Path Cert:\LocalMachine\Root, Cert:\LocalMachine\CA | Where-Object Subject -like '*O=Contoso*'
+Import-Csv .\servers.csv | Get-WinOpsAuditTlsCertificate -CertificateAuthority $pki | Where-Object ChainStatus -ne 'Complete'
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>The CSV file needs a column named ComputerName (or HostName). The certificates of the private PKI let the check build the chain even on a computer that does not trust that PKI.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version</maml:linkText>
+        <maml:uri>https://github.com/zxxdev/winops-audit/blob/main/docs/commands/WinOpsAudit/Get-WinOpsAuditTlsCertificate.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-WinOpsAuditCertificate</maml:linkText>
+        <maml:uri>Get-WinOpsAuditCertificate.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>ADR 0003: judge the chain by what the server sends</maml:linkText>
+        <maml:uri>https://github.com/zxxdev/winops-audit/blob/main/docs/adr/0003-chain-judged-by-what-the-server-sends.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Project on GitHub</maml:linkText>

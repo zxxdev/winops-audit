@@ -11,9 +11,11 @@
 
     # Only read-only verbs: the tests fail if a Set-, Remove- or similar cmdlet is ever exported.
     FunctionsToExport    = @(
+        'Get-WinOpsAuditCertificate'
         'Get-WinOpsAuditInventory'
         'Get-WinOpsAuditRule'
         'Get-WinOpsAuditSoftware'
+        'Get-WinOpsAuditTlsCertificate'
         'Get-WinOpsAuditUpdate'
     )
     CmdletsToExport      = @()

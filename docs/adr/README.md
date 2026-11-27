@@ -7,3 +7,4 @@ costs. New records copy [template.md](template.md) and take the next number.
 | ---------------------------------------- | --------------------------------------------------------- | -------- |
 | [0001](0001-read-only-module.md)         | Keep the module read-only                                 | accepted |
 | [0002](0002-software-from-the-registry.md) | Read installed software from the registry, not Win32_Product | accepted |
+| [0003](0003-chain-judged-by-what-the-server-sends.md) | Judge the certificate chain by what the server sends | accepted |
