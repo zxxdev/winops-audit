@@ -94,7 +94,7 @@ function New-TestCertificate {
     $serial[0] = $serial[0] -band 0x7F
     if ($Hash -eq 'SHA1') {
         # Signed with the key of the issuer, or with its own when it is self-signed.
-        $signingKey = if ($Issuer) { $Issuer.GetRSAPrivateKey() } else { $key }
+        $signingKey = if ($Issuer) { [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($Issuer) } else { $key }
         $issuerName = if ($Issuer) { $Issuer.SubjectName } else { $request.SubjectName }
         $certificate = $request.Create($issuerName, [Sha1RsaSigner]::new($signingKey), $NotBefore, $NotAfter, $serial)
     } else {
