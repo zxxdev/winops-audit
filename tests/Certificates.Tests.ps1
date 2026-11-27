@@ -30,7 +30,7 @@ BeforeAll {
     $pki.Api = New-TestCertificate @issued -Subject 'CN=api.contoso.test' -KeyAlgorithm EC -NotAfter '2027-03-01 18:00'
     $pki.Next = New-TestCertificate -Issuer $pki.Intermediate -Subject 'CN=next.contoso.test' -NotBefore '2027-01-01' -NotAfter '2028-01-01'
 
-    function Set-TestClock {
+    function Use-TestClock {
         Mock -ModuleName WinOpsAudit Get-CurrentTime { [datetime]'2026-11-27 12:00' }
     }
 }
@@ -41,7 +41,7 @@ AfterAll {
 
 Describe 'Get-WinOpsAuditCertificate' {
     BeforeEach {
-        Set-TestClock
+        Use-TestClock
         Mock -ModuleName WinOpsAudit Test-WindowsHost { $true }
         Mock -ModuleName WinOpsAudit Get-StoreCertificate -ParameterFilter { $Name -eq 'My' } {
             $pki.Web, $pki.Mail, $pki.Old, $pki.Legacy, $pki.Printer, $pki.Api, $pki.Next
@@ -205,7 +205,7 @@ Describe 'Get-WinOpsAuditTlsCertificate' {
         # Accepts the connection and never answers.
         $servers.Silent = Start-TestTlsServer -Certificate $pki.Web -Silent
         # The private PKI, as an administrator would pass it.
-        $authority = $pki.Root, $pki.Intermediate
+        $pki.Authority = $pki.Root, $pki.Intermediate
     }
 
     AfterAll {
@@ -213,11 +213,11 @@ Describe 'Get-WinOpsAuditTlsCertificate' {
     }
 
     BeforeEach {
-        Set-TestClock
+        Use-TestClock
     }
 
     It 'returns one object per server, with the certificate it presents and how it connected' {
-        $result = @(Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $servers.Full.Port -CertificateAuthority $authority)
+        $result = @(Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $servers.Full.Port -CertificateAuthority $pki.Authority)
         $result.Count | Should -Be 1
         $result[0].PSObject.TypeNames | Should -Contain 'WinOpsAudit.TlsCertificate'
         $result[0].PSObject.Properties.Name | Should -Be @(
@@ -234,7 +234,7 @@ Describe 'Get-WinOpsAuditTlsCertificate' {
     }
 
     It 'finds the chain complete when the server sends its intermediate (CRT-003)' {
-        $result = Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $servers.Full.Port -CertificateAuthority $authority
+        $result = Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $servers.Full.Port -CertificateAuthority $pki.Authority
         $result.SentCount | Should -Be 1
         $result.ChainStatus | Should -Be 'Complete'
         $result.MissingCertificate | Should -BeNullOrEmpty
@@ -242,7 +242,7 @@ Describe 'Get-WinOpsAuditTlsCertificate' {
     }
 
     It 'flags a server that does not send its intermediate, even when this computer has it (CRT-003)' {
-        $result = Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $servers.LeafOnly.Port -CertificateAuthority $authority
+        $result = Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $servers.LeafOnly.Port -CertificateAuthority $pki.Authority
         $result.SentCount | Should -Be 0
         $result.ChainStatus | Should -Be 'MissingIntermediate'
         $result.MissingCertificate | Should -Be 'CN=Contoso Test Issuing CA, O=Contoso Test'
@@ -266,7 +266,7 @@ Describe 'Get-WinOpsAuditTlsCertificate' {
     }
 
     It 'flags a server whose certificate has expired (CRT-001)' {
-        $result = Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $servers.Expired.Port -CertificateAuthority $authority
+        $result = Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $servers.Expired.Port -CertificateAuthority $pki.Authority
         $result.Status | Should -Be 'Expired'
         $result.DaysLeft | Should -Be -56
         $result.Findings | Should -Be 'CRT-001'
@@ -275,7 +275,7 @@ Describe 'Get-WinOpsAuditTlsCertificate' {
     It 'lists only the servers whose certificate expires within N days with -ExpiringInDays' {
         $ports = $servers.Full.Port, $servers.Expired.Port
         $results = $ports | ForEach-Object {
-            Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $_ -ExpiringInDays 30 -CertificateAuthority $authority
+            Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $_ -ExpiringInDays 30 -CertificateAuthority $pki.Authority
         }
         @($results).Count | Should -Be 1
         $results.Subject | Should -Be 'CN=old.contoso.test'
@@ -284,7 +284,7 @@ Describe 'Get-WinOpsAuditTlsCertificate' {
     It 'goes on with the other servers when one does not answer, and says which' {
         # Nothing listens on 127.0.0.2: the connection is refused.
         $output = '127.0.0.2', '127.0.0.1' |
-            Get-WinOpsAuditTlsCertificate -Port $servers.Full.Port -CertificateAuthority $authority -ErrorAction Continue 2>&1
+            Get-WinOpsAuditTlsCertificate -Port $servers.Full.Port -CertificateAuthority $pki.Authority -ErrorAction Continue 2>&1
         $problems = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
         $results = @($output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] })
         $results.ComputerName | Should -Be '127.0.0.1'
@@ -305,12 +305,12 @@ Describe 'Get-WinOpsAuditTlsCertificate' {
 
     It 'takes the names from the pipeline, also as a property' {
         $results = [pscustomobject]@{ ComputerName = '127.0.0.1' }, [pscustomobject]@{ HostName = '127.0.0.1' } |
-            Get-WinOpsAuditTlsCertificate -Port $servers.Full.Port -CertificateAuthority $authority
+            Get-WinOpsAuditTlsCertificate -Port $servers.Full.Port -CertificateAuthority $pki.Authority
         @($results).Count | Should -Be 2
     }
 
     It 'can be exported, and shows a short table by default' {
-        $result = Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $servers.LeafOnly.Port -CertificateAuthority $authority
+        $result = Get-WinOpsAuditTlsCertificate -ComputerName 127.0.0.1 -Port $servers.LeafOnly.Port -CertificateAuthority $pki.Authority
         $csv = $result | ConvertTo-Csv
         $csv[1] | Should -Not -Match 'System\.Object\[\]|PSCustomObject|List`1'
         $table = $result | Out-String
